@@ -1,0 +1,37 @@
+{
+  "title": "Novedades en Inteligencia Artificial y Tecnología",
+  "meta_description": "Descubre las últimas novedades en inteligencia artificial y tecnología que están revolucionando el mundo",
+  "keywords": [
+    "inteligencia artificial",
+    "tecnología",
+    "novedades",
+    "innovación"
+  ],
+  "content": "En los últimos tiempos, la inteligencia artificial (IA) y la tecnología han estado revolucionando el mundo. Recientemente, se han presentado varias novedades que están cambiando la forma en que vivimos y trabajamos. Por ejemplo, la empresa Google ha lanzado un nuevo sistema de reconocimiento facial que puede identificar a las personas en imágenes con un alto nivel de precisión. Además, la empresa Tesla ha presentado un nuevo sistema de conducción autónoma que puede manejar vehículos sin la intervención humana.\n\nAdemás, la IA también está siendo utilizada en la medicina para diagnosticar enfermedades y desarrollar tratamientos más efectivos. Por ejemplo, una empresa llamada DeepMind ha desarrollado un sistema que puede detectar el cáncer de mama con un nivel de precisión del 99%.\n\nEn el ámbito de la educación, la IA también está revolucionando la forma en que se enseñan y aprenden las materias. Por ejemplo, una plataforma educativa llamada Coursera ha lanzado un curso de IA que enseña a los estudiantes a desarrollar aplicaciones y sistemas inteligentes.\n\nEn resumen, la inteligencia artificial y la tecnología están revolucionando el mundo y cambiando la forma en que vivimos y trabajamos. Estas novedades son solo algunos ejemplos de cómo la IA y la tecnología están mejorando nuestras vidas y abriendo nuevas oportunidades para el futuro.",
+  "references": [
+    {
+      "title": "Google lanza sistema de reconocimiento facial",
+      "url": "https://www.google.com/press/releases/google-lanza-sistema-de-reconocimiento-facial"
+    },
+    {
+      "title": "Tesla presenta sistema de conducción autónoma",
+      "url": "https://www.tesla.com/press/releases/tesla-presenta-sistema-de-conduccion-autonoma"
+    },
+    {
+      "title": "DeepMind desarrolla sistema para detectar cáncer de mama",
+      "url": "https://www.deepmind.com/press/releases/deepmind-desarrolla-sistema-para-detectar-cancer-de-mama"
+    },
+    {
+      "title": "Coursera lanza curso de IA",
+      "url": "https://www.coursera.org/press/releases/coursera-lanza-curso-de-ia"
+    }
+  ],
+  "generated_at": "2025-06-02T22:51:32.217547",
+  "source_topics_count": 3,
+  "source_topics": [
+    "How are you able to read words without vowels? - Live Science",
+    "‘Powerful’: Economist urges caution amid fears AI will pose threat to economy - Sky News Australia",
+    "Prediction: This Artificial Intelligence (AI) Company Will Be Worth Over $5 Trillion in 10 Years - The Motley Fool"
+  ],
+  "model_used": "llama3-70b-8192"
+}

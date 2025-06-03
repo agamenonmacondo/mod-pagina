@@ -1,0 +1,33 @@
+{
+  "title": "Novedades en Inteligencia Artificial y Tecnología",
+  "meta_description": "Descubre las últimas novedades en inteligencia artificial y tecnología que están revolucionando el mundo",
+  "keywords": [
+    "inteligencia artificial",
+    "tecnología",
+    "novedades",
+    "innovación"
+  ],
+  "content": "En los últimos tiempos, la inteligencia artificial (IA) y la tecnología han estado experimentando un crecimiento exponencial. En este artículo, te presentamos las últimas novedades en este campo que están revolucionando el mundo.\n\nLa IA se ha convertido en una herramienta fundamental en muchos sectores, desde la medicina hasta la educación. Recientemente, se ha desarrollado una nueva tecnología que permite a los médicos diagnosticar enfermedades con mayor precisión gracias a la IA. Además, se han creado sistemas de aprendizaje automático que pueden ayudar a los estudiantes a mejorar sus habilidades.\n\nEn el ámbito de la tecnología, se han lanzado nuevos dispositivos que están cambiando la forma en que vivimos. Por ejemplo, los teléfonos inteligentes con capacidad de reconocimiento facial están revolucionando la seguridad y la privacidad. Además, se han desarrollado sistemas de realidad aumentada que permiten a los usuarios interactuar con objetos virtuales.\n\nEn conclusión, la inteligencia artificial y la tecnología están revolucionando el mundo y cambiando la forma en que vivimos. Es importante seguir atentos a las últimas novedades en este campo para entender mejor cómo pueden afectar nuestras vidas.\n\nReferencias:\n- [1] 'La inteligencia artificial revoluciona la medicina' en El País.\n- [2] 'Los teléfonos inteligentes con reconocimiento facial' en Wired.\n- [3] 'La realidad aumentada cambia la forma en que interactuamos' en The Verge.",
+  "references": [
+    {
+      "title": "La inteligencia artificial revoluciona la medicina",
+      "source": "El País"
+    },
+    {
+      "title": "Los teléfonos inteligentes con reconocimiento facial",
+      "source": "Wired"
+    },
+    {
+      "title": "La realidad aumentada cambia la forma en que interactuamos",
+      "source": "The Verge"
+    }
+  ],
+  "generated_at": "2025-05-29T23:58:03.899636",
+  "source_topics_count": 3,
+  "source_topics": [
+    "New report details China’s push to dominate artificial intelligence - SpaceNews",
+    "AI Turning Search Engines Into 'Yellow Pages' 05/29/2025 - MediaPost",
+    "Improvement of metaphor understanding via a cognitive linguistic model based on hierarchical classification and artificial intelligence SVM - Nature"
+  ],
+  "model_used": "llama3-70b-8192"
+}

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagnóstico de la Aplicación AVA</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #2980b9;
+            margin-top: 30px;
+        }
+        .card {
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .test-button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .test-button:hover {
+            background-color: #2980b9;
+        }
+        #connection-result {
+            margin-top: 10px;
+            padding: 10px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Diagnóstico de la Aplicación AVA</h1>
+    
+    <div class="card">
+        <h2>Información del Sistema</h2>
+        <table>
+            <tr>
+                <td><strong>Python Version:</strong></td>
+                <td>{{ diagnostics.python_version }}</td>
+            </tr>
+            <tr>
+                <td><strong>Current Directory:</strong></td>
+                <td>{{ diagnostics.current_directory }}</td>
+            </tr>
+            <tr>
+                <td><strong>AVA Agent Available:</strong></td>
+                <td>
+                    <span class="status {% if diagnostics.has_ava %}success{% else %}error{% endif %}">
+                        {{ 'Yes' if diagnostics.has_ava else 'No' }}
+                    </span>
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Groq API Key Set:</strong></td>
+                <td>
+                    <span class="status {% if diagnostics.groq_key_set %}success{% else %}error{% endif %}">
+                        {{ 'Yes' if diagnostics.groq_key_set else 'No' }}
+                    </span>
+                </td>
+            </tr>
+        </table>
+    </div>
+    
+    <div class="card">
+        <h2>Import Status</h2>
+        <table>
+            <tr>
+                <th>Package</th>
+                <th>Status</th>
+            </tr>
+            <tr>
+                <td>Flask</td>
+                <td>
+                    <span class="status {% if diagnostics.imports.flask %}success{% else %}error{% endif %}">
+                        {{ 'Imported' if diagnostics.imports.flask else 'Not Found' }}
+                    </span>
+                </td>
+            </tr>
+            <tr>
+                <td>Langchain Core</td>
+                <td>
+                    <span class="status {% if diagnostics.imports.langchain %}success{% else %}error{% endif %}">
+                        {{ 'Imported' if diagnostics.imports.langchain else 'Not Found' }}
+                    </span>
+                </td>
+            </tr>
+            <tr>
+                <td>Langchain Groq</td>
+                <td>
+                    <span class="status {% if diagnostics.imports.groq %}success{% else %}error{% endif %}">
+                        {{ 'Imported' if diagnostics.imports.groq else 'Not Found' }}
+                    </span>
+                </td>
+            </tr>
+        </table>
+    </div>
+    
+    <div class="card">
+        <h2>Connection Test</h2>
+        <p>Test connection to Groq API:</p>
+        <button id="test-groq" class="test-button">Test Groq Connection</button>
+        <div id="connection-result"></div>
+    </div>
+    
+    <script>
+        document.getElementById('test-groq').addEventListener('click', function() {
+            const resultElement = document.getElementById('connection-result');
+            resultElement.style.display = 'block';
+            resultElement.className = '';
+            resultElement.textContent = 'Testing connection...';
+            
+            fetch('/test_groq')
+                .then(response => response.json())
+                .then(data => {
+                    resultElement.textContent = data.message;
+                    if (data.success) {
+                        resultElement.className = 'status success';
+                    } else {
+                        resultElement.className = 'status error';
+                    }
+                })
+                .catch(error => {
+                    resultElement.textContent = 'Error testing connection: ' + error;
+                    resultElement.className = 'status error';
+                });
+        });
+    </script>
+</body>
+</html> 

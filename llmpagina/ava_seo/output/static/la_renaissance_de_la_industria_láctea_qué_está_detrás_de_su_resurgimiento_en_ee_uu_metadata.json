@@ -1,0 +1,15 @@
+{
+  "image_filename": "la_renaissance_de_la_industria_láctea_qué_está_detrás_de_su_resurgimiento_en_ee_uu.png",
+  "article_title": "La Renaissance de la Industria Láctea: ¿Qué está detrás de su resurgimiento en EE. UU.?",
+  "article_file": "la_renaissance_de_la_industria_láctea___qué_está_d_20250529.json",
+  "prompt": "Here is the detailed prompt for generating a conceptual image that accompanies the article:\n\n\"Create an image that represents the resurgence of the US dairy industry, incorporating elements of artificial intelligence (AI). The artwork should be visually striking, with a professional, commercial, and modern style.\n\nElements to include:\n\n* A stylized depiction of a cow's head or a milk bottle, symbolizing the dairy industry\n* A hint of AI-inspired elements, such as:\n\t+ A subtle grid pattern or circuitry design in the background to represent the AI aspect\n\t+ A faint glow or LED lights to signify the innovative technology\n* A bold color palette with a mix of creamy whites, rich browns, and vibrant accents to evoke a sense of sustainability, growth, and modernity\n* A composition that includes overlapping or juxtaposed elements to convey the intersection of technology and industry\n* A close-up detailed focus on the cow's head or milk bottle to emphasize the attention to detail and high-quality finish\n\nStyle:\n* Professional, commercial, and modern aesthetic inspired by science fiction and futuristic art\n* High-contrast, high-impact composition with bold lines and shapes\n* Textures and shading should be subtle yet atmospheric, with a focus on creating depth and dimension\n\nColor palette:\n* Primary colors: Creamy white (#F5F5F5), rich brown (#964B00), and vibrant green (#34C759)\n* Accent colors: Deep blue (#2F4F7F) and metallic gold (#FFD700)\n\nTarget resolution:\n* High-resolution image (minimum 3000 x 2000 pixels)\n* Ensure a detailed, close-up focus on the subject matter\"\n\nThis prompt provides a clear and detailed description of the image to be generated, including the main elements, style, color palette, composition, and photography style. The goal is to create an eye-catching, professional, and modern image that effectively represents the article's theme and incorporates elements of AI.",
+  "model": "FLUX.1-schnell-Free",
+  "generated_at": "2025-05-29T01:35:03.800002",
+  "keywords": [
+    "industria láctea",
+    "EE. UU.",
+    "proteína",
+    "precio",
+    "percepción"
+  ]
+}

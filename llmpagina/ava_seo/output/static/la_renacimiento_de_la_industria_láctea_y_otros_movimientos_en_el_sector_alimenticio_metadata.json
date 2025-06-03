@@ -1,0 +1,17 @@
+{
+  "image_filename": "la_renacimiento_de_la_industria_láctea_y_otros_movimientos_en_el_sector_alimenticio.png",
+  "article_title": "La renacimiento de la industria láctea y otros movimientos en el sector alimenticio",
+  "article_file": "la_renacimiento_de_la_industria_láctea_y_otros_mov_20250529.json",
+  "prompt": "Here is the prompt for generating the concept image:\n\n\"Create a visually stunning image that captures the essence of the article 'The Dairy Renaissance: How Protein, Price, and Perception are Reviving Cow's Milk in the US'. The image should feature a futuristic and modern composition that incorporates elements of artificial intelligence (AI). \n\nMain visual elements: \n- A close-up of a cow's milk bottle with a transparent label showcasing a 3D hologram of a protein molecule, surrounded by subtle, swirling patterns of lactose and other dairy compounds. \n- In the background, a blurred image of a cityscape with skyscrapers and neon lights, representing the urban environment and the renaissance of the dairy industry.\n- A subtle AI-inspired design element, such as a circuit board or a neural network diagram, integrated into the background or label to symbolize the connection between technology and dairy.\n\nStyle:\n- Professional, commercial, and modern, with a mix of clean lines, geometric shapes, and organic textures.\n- Colors:\n\t+ Main color: A calming, creamy white (#F7F7F7) reminiscent of milk.\n\t+ Secondary colors: A palette of pastel shades, such as light blue (#ADD8E6), mauve (#C4C4C4), and golden yellow (#F2C464), used to add depth and visual interest.\n\t+ Accent color: A bold, electric blue (#03A9F4) used to highlight the 3D hologram and add a touch of futurism.\n\nComposition:\n- The composition should be balanced, with a clear focal point on the cow's milk bottle and the 3D hologram.\n- The blurred cityscape in the background should be subtle, adding depth and atmosphere to the image without overpowering the main elements.\n- The AI-inspired design element should be integrated seamlessly into the composition, adding an added layer of meaning and symbolism.\n\nFotographic style: \n- Close-up, detailed shot to emphasize the textures, patterns, and materials used in the design.\n- Use of subtle lighting and shadows to create depth and dimensionality.\n- Consider using a shallow depth of field to blur the background and bring attention to the main visual elements.\n\nThe goal is to create an image that is visually stunning, thought-provoking, and conceptually rich, incorporating elements of AI and dairy to convey the theme of the article.\"",
+  "model": "FLUX.1-schnell-Free",
+  "generated_at": "2025-05-29T01:37:27.412154",
+  "keywords": [
+    "industria láctea",
+    "proteína",
+    "precio",
+    "percepción",
+    "Brynwood Partners",
+    "sostenibilidad",
+    "cosmética"
+  ]
+}

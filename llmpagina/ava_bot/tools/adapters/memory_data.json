@@ -1,0 +1,138 @@
+{
+  "usuario_desconocido": [
+    {
+      "message": "quiero implmentar un agente",
+      "response": "¡Hola! Soy Ava de Agentes Virtuales Avanzados. Me alegra que estés considerando implementar un agente virtual en tu negocio. Para ayudarte mejor, ¿me das tu nombre y email?",
+      "timestamp": "2025-05-30T16:19:09.014378"
+    }
+  ],
+  "test_user": [
+    {
+      "message": "Hola, soy un mensaje de prueba",
+      "response": "Hola! Respuesta de prueba",
+      "timestamp": "2025-05-31T21:46:02.584172"
+    },
+    {
+      "message": "Hola, soy un mensaje de prueba",
+      "response": "Hola! Respuesta de prueba",
+      "timestamp": "2025-05-31T21:46:22.657230"
+    },
+    {
+      "message": "Hola, soy un mensaje de prueba",
+      "response": "Hola! Respuesta de prueba",
+      "timestamp": "2025-05-31T21:46:32.493376"
+    },
+    {
+      "message": "Hola, soy un mensaje de prueba",
+      "response": "Hola! Respuesta de prueba",
+      "timestamp": "2025-05-31T21:50:10.182553"
+    },
+    {
+      "message": "Hola, soy un mensaje de prueba",
+      "response": "Hola! Respuesta de prueba",
+      "timestamp": "2025-05-31T21:55:14.894628"
+    },
+    {
+      "message": "Hola, soy un mensaje de prueba",
+      "response": "Hola! Respuesta de prueba",
+      "timestamp": "2025-05-31T22:00:12.588146"
+    }
+  ],
+  "test_multimodal_user": [
+    {
+      "type": "image",
+      "original_path": "C:\\Users\\h\\Downloads\\ChatGPT Image 1 may 2025, 05_44_25 a.m..png",
+      "stored_path": "c:\\Users\\h\\Downloads\\pagina ava\\llmpagina\\ava_bot\\tools\\adapters\\stored_images\\test_multimodal_user_b605f51be002974efc19d4d24e897a84_ChatGPT Image 1 may 2025, 05_44_25 a.m..png",
+      "filename": "ChatGPT Image 1 may 2025, 05_44_25 a.m..png",
+      "description": "Imagen de prueba de ChatGPT del 1 de mayo 2025",
+      "hash": "b605f51be002974efc19d4d24e897a84",
+      "size": 1938688,
+      "dimensions": "1024x1024",
+      "format": "PNG",
+      "timestamp": "2025-05-31T21:50:10.246703"
+    },
+    {
+      "type": "image",
+      "original_path": "C:\\Users\\h\\Downloads\\ChatGPT Image 1 may 2025, 05_44_25 a.m..png",
+      "stored_path": "c:\\Users\\h\\Downloads\\pagina ava\\llmpagina\\ava_bot\\tools\\adapters\\stored_images\\test_multimodal_user_b605f51be002974efc19d4d24e897a84_ChatGPT Image 1 may 2025, 05_44_25 a.m..png",
+      "filename": "ChatGPT Image 1 may 2025, 05_44_25 a.m..png",
+      "description": "Imagen de prueba de ChatGPT del 1 de mayo 2025",
+      "hash": "b605f51be002974efc19d4d24e897a84",
+      "size": 1938688,
+      "dimensions": "1024x1024",
+      "format": "PNG",
+      "timestamp": "2025-05-31T21:55:14.918931"
+    },
+    {
+      "type": "image",
+      "original_path": "C:\\Users\\h\\Downloads\\ChatGPT Image 1 may 2025, 05_44_25 a.m..png",
+      "stored_path": "c:\\Users\\h\\Downloads\\pagina ava\\llmpagina\\ava_bot\\tools\\adapters\\stored_images\\test_multimodal_user_b605f51be002974efc19d4d24e897a84_ChatGPT Image 1 may 2025, 05_44_25 a.m..png",
+      "filename": "ChatGPT Image 1 may 2025, 05_44_25 a.m..png",
+      "description": "Imagen de prueba de ChatGPT del 1 de mayo 2025",
+      "hash": "b605f51be002974efc19d4d24e897a84",
+      "size": 1938688,
+      "dimensions": "1024x1024",
+      "format": "PNG",
+      "timestamp": "2025-05-31T22:00:12.612947"
+    }
+  ],
+  "performance_test_user": [
+    {
+      "message": "Mensaje de prueba 1",
+      "response": "Respuesta de prueba 1",
+      "timestamp": "2025-05-31T22:00:12.638974"
+    },
+    {
+      "message": "Mensaje de prueba 2",
+      "response": "Respuesta de prueba 2",
+      "timestamp": "2025-05-31T22:00:12.639470"
+    },
+    {
+      "message": "Mensaje de prueba 3",
+      "response": "Respuesta de prueba 3",
+      "timestamp": "2025-05-31T22:00:12.639966"
+    },
+    {
+      "message": "Mensaje de prueba 4",
+      "response": "Respuesta de prueba 4",
+      "timestamp": "2025-05-31T22:00:12.640462"
+    },
+    {
+      "message": "Mensaje de prueba 5",
+      "response": "Respuesta de prueba 5",
+      "timestamp": "2025-05-31T22:00:12.641454"
+    },
+    {
+      "message": "Mensaje de prueba 6",
+      "response": "Respuesta de prueba 6",
+      "timestamp": "2025-05-31T22:00:12.641950"
+    },
+    {
+      "message": "Mensaje de prueba 7",
+      "response": "Respuesta de prueba 7",
+      "timestamp": "2025-05-31T22:00:12.642446"
+    },
+    {
+      "message": "Mensaje de prueba 8",
+      "response": "Respuesta de prueba 8",
+      "timestamp": "2025-05-31T22:00:12.642942"
+    },
+    {
+      "message": "Mensaje de prueba 9",
+      "response": "Respuesta de prueba 9",
+      "timestamp": "2025-05-31T22:00:12.643437"
+    },
+    {
+      "type": "image",
+      "original_path": "C:\\Users\\h\\Downloads\\ChatGPT Image 1 may 2025, 05_44_25 a.m..png",
+      "stored_path": "c:\\Users\\h\\Downloads\\pagina ava\\llmpagina\\ava_bot\\tools\\adapters\\stored_images\\performance_test_user_b605f51be002974efc19d4d24e897a84_ChatGPT Image 1 may 2025, 05_44_25 a.m..png",
+      "filename": "ChatGPT Image 1 may 2025, 05_44_25 a.m..png",
+      "description": "Test imagen JSON",
+      "hash": "b605f51be002974efc19d4d24e897a84",
+      "size": 1938688,
+      "dimensions": "1024x1024",
+      "format": "PNG",
+      "timestamp": "2025-05-31T22:00:12.697569"
+    }
+  ]
+}

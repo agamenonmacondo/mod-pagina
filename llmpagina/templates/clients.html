@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#1c1c1c">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>Clientes - AVA - Agentes Virtuales Avanzados</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Estilos responsive para tablas en móviles */
+        @media (max-width: 767px) {
+            .conversation-table {
+                display: block;
+                width: 100%;
+                overflow-x: auto;
+            }
+            
+            .conversation-table thead {
+                display: none; /* Ocultar encabezados en móvil */
+            }
+            
+            .conversation-table tbody, .conversation-table tr {
+                display: block;
+                width: 100%;
+            }
+            
+            .conversation-table td {
+                display: flex;
+                justify-content: space-between;
+                text-align: right;
+                position: relative;
+                padding-left: 50%;
+            }
+            
+            .conversation-table td:before {
+                content: attr(data-label);
+                position: absolute;
+                left: 15px;
+                width: 45%;
+                white-space: nowrap;
+                font-weight: bold;
+                text-align: left;
+            }
+            
+            .conversation-table tr {
+                margin-bottom: 15px;
+                border-bottom: 1px solid rgba(255, 215, 0, 0.1);
+                background-color: var(--card-bg);
+                border-radius: 8px;
+                padding: 10px;
+            }
+            
+            .conversation-table td:last-child {
+                border-bottom: none;
+            }
+            
+            .actions {
+                justify-content: flex-end;
+            }
+            
+            /* Adaptar tarjetas de estadísticas */
+            .stats-cards {
+                grid-template-columns: 1fr;
+            }
+            
+            /* Modal adaptado para móvil */
+            .modal-content {
+                width: 95%;
+                padding: 15px;
+                max-height: 90vh;
+            }
+            
+            /* Adaptación para etiquetas data-label en tarjetas de conversaciones */
+            #client-conversations-list .conversation-table td:before {
+                content: attr(data-label);
+                position: absolute;
+                left: 10px;
+                width: 45%;
+                white-space: nowrap;
+                font-weight: bold;
+                text-align: left;
+            }
+        }
+        
+        /* Estilos de carga y errores */
+        .loading-indicator {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255, 215, 0, 0.2);
+            border-left-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 15px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error-message {
+            background-color: rgba(220, 53, 69, 0.1);
+            border: 1px solid rgba(220, 53, 69, 0.3);
+            color: #ff6b6b;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+        
+        .error-state {
+            color: #ff6b6b;
+            text-align: center;
+            padding: 15px;
+            font-weight: 500;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 30px 15px;
+            color: #888;
+            font-style: italic;
+        }
+        
+        /* Estilos para el modal de clientes */
+        .client-details {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .client-info {
+            background-color: rgba(255, 215, 0, 0.05);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 215, 0, 0.1);
+        }
+        
+        .client-conversations h4 {
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+            color: var(--primary);
+        }
+        
+        .retry-btn {
+            background-color: var(--primary);
+            color: var(--dark);
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+            margin-top: 10px;
+            display: inline-block;
+        }
+        
+        .retry-btn:hover {
+            background-color: #ffc107;
+        }
+        
+        /* Estilos para el dropdown */
+        .dropdown {
+            position: relative;
+            display: inline-block;
+            margin-left: 10px;
+        }
+        
+        .dropdown-btn {
+            background-color: var(--card-bg);
+            color: var(--primary);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        .dropdown-btn:hover {
+            background-color: rgba(255, 215, 0, 0.1);
+        }
+        
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            right: 0;
+            background-color: var(--card-bg);
+            min-width: 180px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+            z-index: 1;
+            border-radius: 4px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 215, 0, 0.1);
+        }
+        
+        .dropdown-content a {
+            color: #ccc;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            transition: all 0.2s ease;
+        }
+        
+        .dropdown-content a i {
+            margin-right: 10px;
+            color: var(--primary);
+        }
+        
+        .dropdown-content a:hover {
+            background-color: rgba(255, 215, 0, 0.1);
+            color: var(--primary);
+        }
+        
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+        
+        @media (max-width: 767px) {
+            .header-actions {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: space-between;
+            }
+            
+            .search-container {
+                flex: 1;
+                margin-right: 10px;
+                min-width: 200px;
+            }
+            
+            .dropdown-content {
+                right: 0;
+                min-width: 160px;
+            }
+        }
+        
+        /* Estilos para estado vacío */
+        .empty-state-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px 20px;
+        }
+        
+        .empty-state {
+            background-color: var(--card-bg);
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            max-width: 600px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 215, 0, 0.1);
+        }
+        
+        .empty-state i {
+            color: var(--primary);
+            margin-bottom: 20px;
+            opacity: 0.7;
+        }
+        
+        .empty-state h4 {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            color: var(--primary);
+        }
+        
+        .empty-state p {
+            color: #aaa;
+            margin-bottom: 10px;
+        }
+        
+        .empty-state-actions {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 25px;
+        }
+        
+        .empty-state-actions .action-btn {
+            background-color: rgba(255, 215, 0, 0.1);
+            color: var(--primary);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            padding: 10px 15px;
+            border-radius: 4px;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+        
+        .empty-state-actions .action-btn:hover {
+            background-color: rgba(255, 215, 0, 0.2);
+        }
+        
+        @media (max-width: 480px) {
+            .empty-state {
+                padding: 20px;
+            }
+            
+            .empty-state-actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body class="dashboard-page">
+    <header>
+        <div class="container">
+            <div class="logo">
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="AVA Logo">
+                <div class="logo-text">
+                    <h1>AVA</h1>
+                    <p>AGENTES VIRTUALES AVANZADOS</p>
+                </div>
+            </div>
+            <div class="menu-toggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="/">Inicio</a></li>
+                    <li><a href="/dashboard" class="active">Dashboard</a></li>
+                    <li><a href="/logout">Cerrar Sesión</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <div class="dashboard-container">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h3>Panel de Control</h3>
+            </div>
+            <div class="sidebar-menu">
+                <li{% if active_menu == "dashboard" %} class="active"{% endif %}><a href="{{ url_for('dashboard.dashboard') }}"><i class="fas fa-comments"></i> Conversaciones</a></li>
+                <li{% if active_menu == "clients" %} class="active"{% endif %}><a href="{{ url_for('dashboard.clients') }}"><i class="fas fa-user-friends"></i> Clientes</a></li>
+                <li{% if active_menu == "stats" %} class="active"{% endif %}><a href="{{ url_for('dashboard.statistics') }}"><i class="fas fa-chart-bar"></i> Estadísticas</a></li>
+                <li{% if active_menu == "config" %} class="active"{% endif %}><a href="{{ url_for('dashboard.configuration') }}"><i class="fas fa-cog"></i> Configuración</a></li>
+            </div>
+            <div class="sidebar-footer">
+                <p>AVA v1.0</p>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="dashboard-header">
+                <h2>Gestión de Clientes</h2>
+                <div class="header-actions">
+                    <div class="search-container">
+                        <input type="text" id="clientSearchInput" placeholder="Buscar cliente...">
+                        <button type="button" id="clientSearchBtn"><i class="fas fa-search"></i></button>
+                    </div>
+                    <div class="dropdown">
+                        <button class="dropdown-btn"><i class="fas fa-ellipsis-v"></i></button>
+                        <div class="dropdown-content">
+                            <a href="/reset_db" onclick="return confirm('¿Estás seguro que deseas reiniciar la base de datos de clientes? Esta acción no se puede deshacer.')"><i class="fas fa-database"></i> Reiniciar BD</a>
+                            <a href="#" id="exportAllBtn"><i class="fas fa-file-export"></i> Exportar todos</a>
+                            <a href="/diagnostico"><i class="fas fa-stethoscope"></i> Diagnóstico</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="clients-overview">
+                <div class="stats-cards">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="stat-details">
+                            <h3>{{ stats.total_clients }}</h3>
+                            <p>Clientes Totales</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-user-plus"></i>
+                        </div>
+                        <div class="stat-details">
+                            <h3>{{ stats.recent_clients }}</h3>
+                            <p>Nuevos esta Semana</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-message"></i>
+                        </div>
+                        <div class="stat-details">
+                            <h3>{{ stats.total_conversations }}</h3>
+                            <p>Conversaciones Totales</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="conversation-list-container">
+                <h3>Lista de Clientes</h3>
+                {% if error %}
+                    <div class="error-message">
+                        <p>{{ error }}</p>
+                    </div>
+                {% endif %}
+                
+                {% if clients %}
+                    <table class="conversation-table client-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>Conversaciones</th>
+                                <th>Última Actividad</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for client in clients %}
+                                <tr>
+                                    <td data-label="ID">{{ client.user_id[:8] if client.user_id else 'Anónimo' }}</td>
+                                    <td data-label="Nombre">{{ client.name }}</td>
+                                    <td data-label="Conversaciones">{{ client.conversations }}</td>
+                                    <td data-label="Última Actividad">
+                                        {% if client.last_activity %}
+                                            {{ (datetime.fromisoformat(client.last_activity.replace('Z', '+00:00'))).strftime('%d/%m/%Y %H:%M') }}
+                                        {% else %}
+                                            No disponible
+                                        {% endif %}
+                                    </td>
+                                    <td data-label="Acciones" class="actions">
+                                        <button class="action-btn view-client-btn" data-id="{{ client.user_id }}">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="action-btn export-client-btn" data-id="{{ client.user_id }}">
+                                            <i class="fas fa-download"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <div class="empty-state-container">
+                        <div class="empty-state">
+                            <i class="fas fa-users fa-3x"></i>
+                            <h4>No hay clientes registrados</h4>
+                            <p>Aún no hay conversaciones registradas en el sistema.</p>
+                            <p>Cuando los usuarios interactúen con AVA, sus conversaciones aparecerán aquí.</p>
+                            
+                            <div class="empty-state-actions">
+                                <a href="/reset_db" class="action-btn" onclick="return confirm('¿Estás seguro que deseas reiniciar la base de datos? Esta acción no se puede deshacer.')">
+                                    <i class="fas fa-database"></i> Reiniciar base de datos
+                                </a>
+                                <a href="/dashboard" class="action-btn">
+                                    <i class="fas fa-chart-line"></i> Ir al dashboard
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para ver detalles del cliente -->
+    <div id="clientModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Detalles del cliente</h3>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="client-details">
+                    <div class="client-info">
+                        <p><strong>ID:</strong> <span id="modal-client-id"></span></p>
+                        <p><strong>Nombre:</strong> <span id="modal-client-name"></span></p>
+                        <p><strong>Conversaciones:</strong> <span id="modal-client-conversations"></span></p>
+                        <p><strong>Última actividad:</strong> <span id="modal-client-last-activity"></span></p>
+                    </div>
+                    <div class="client-conversations">
+                        <h4>Historial de conversaciones</h4>
+                        <div id="client-conversations-list">
+                            <!-- Aquí se cargarán dinámicamente las conversaciones -->
+                            <div class="loading-indicator">
+                                <div class="spinner"></div>
+                                <p>Cargando conversaciones...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+</body>
+</html> 

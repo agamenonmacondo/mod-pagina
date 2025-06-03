@@ -1,0 +1,47 @@
+version: '3.9'
+
+services:
+  # ✅ SERVICIO PRINCIPAL AVA
+  web:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: ava-web
+    ports:
+      - "8080:8080"
+    volumes:
+      # ✅ VOLÚMENES PERSISTENTES
+      - ./logs:/app/logs
+      - ./instance:/app/instance
+      - ./uploads:/app/uploads
+    environment:
+      # ✅ VARIABLES DE ENTORNO
+      - PORT=8080
+      - FLASK_ENV=production
+      - FLASK_APP=app:app
+    env_file:
+      - .env
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Redis opcional para caché
+  redis:
+    image: redis:7-alpine
+    container_name: ava-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    profiles:
+      - cache
+
+volumes:
+  redis_data:
+    driver: local

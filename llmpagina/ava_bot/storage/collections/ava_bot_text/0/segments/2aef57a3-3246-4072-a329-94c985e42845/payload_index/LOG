@@ -1,0 +1,247 @@
+2025/05/25-15:39:02.018802 81a4 RocksDB version: 9.9.3
+2025/05/25-15:39:02.018856 81a4 Compile date 2024-12-05 01:25:31
+2025/05/25-15:39:02.018871 81a4 DB SUMMARY
+2025/05/25-15:39:02.018885 81a4 Host name (Env):  DESKTOP-BE615GN
+2025/05/25-15:39:02.018893 81a4 DB Session ID:  OJ5JX8BAJ9TG4KQFDSAH
+2025/05/25-15:39:02.021003 81a4 CURRENT file:  CURRENT
+2025/05/25-15:39:02.021018 81a4 IDENTITY file:  IDENTITY
+2025/05/25-15:39:02.021224 81a4 MANIFEST file:  MANIFEST-000017 size: 165 Bytes
+2025/05/25-15:39:02.021242 81a4 SST files in ./storage\collections\ava_bot_text\0\segments\2aef57a3-3246-4072-a329-94c985e42845\payload_index dir, Total Num: 0, files: 
+2025/05/25-15:39:02.021252 81a4 Write Ahead Log file in ./storage\collections\ava_bot_text\0\segments\2aef57a3-3246-4072-a329-94c985e42845\payload_index: 000016.log size: 0 ; 
+2025/05/25-15:39:02.021328 81a4                         Options.error_if_exists: 0
+2025/05/25-15:39:02.021334 81a4                       Options.create_if_missing: 1
+2025/05/25-15:39:02.021337 81a4                         Options.paranoid_checks: 1
+2025/05/25-15:39:02.021340 81a4             Options.flush_verify_memtable_count: 1
+2025/05/25-15:39:02.021344 81a4          Options.compaction_verify_record_count: 1
+2025/05/25-15:39:02.021348 81a4                               Options.track_and_verify_wals_in_manifest: 0
+2025/05/25-15:39:02.021351 81a4        Options.verify_sst_unique_id_in_manifest: 1
+2025/05/25-15:39:02.021355 81a4                                     Options.env: 0000027D3E8C4AE0
+2025/05/25-15:39:02.021359 81a4                                      Options.fs: WinFS
+2025/05/25-15:39:02.021362 81a4                                Options.info_log: 0000027D65870E00
+2025/05/25-15:39:02.021366 81a4                Options.max_file_opening_threads: 16
+2025/05/25-15:39:02.021370 81a4                              Options.statistics: 0000000000000000
+2025/05/25-15:39:02.021373 81a4                               Options.use_fsync: 0
+2025/05/25-15:39:02.021377 81a4                       Options.max_log_file_size: 1048576
+2025/05/25-15:39:02.021381 81a4                  Options.max_manifest_file_size: 1073741824
+2025/05/25-15:39:02.021385 81a4                   Options.log_file_time_to_roll: 0
+2025/05/25-15:39:02.021388 81a4                       Options.keep_log_file_num: 1
+2025/05/25-15:39:02.021392 81a4                    Options.recycle_log_file_num: 0
+2025/05/25-15:39:02.021395 81a4                         Options.allow_fallocate: 1
+2025/05/25-15:39:02.021398 81a4                        Options.allow_mmap_reads: 0
+2025/05/25-15:39:02.021402 81a4                       Options.allow_mmap_writes: 0
+2025/05/25-15:39:02.021405 81a4                        Options.use_direct_reads: 0
+2025/05/25-15:39:02.021409 81a4                        Options.use_direct_io_for_flush_and_compaction: 0
+2025/05/25-15:39:02.021412 81a4          Options.create_missing_column_families: 1
+2025/05/25-15:39:02.021415 81a4                              Options.db_log_dir: 
+2025/05/25-15:39:02.021419 81a4                                 Options.wal_dir: 
+2025/05/25-15:39:02.021423 81a4                Options.table_cache_numshardbits: 6
+2025/05/25-15:39:02.021427 81a4                         Options.WAL_ttl_seconds: 0
+2025/05/25-15:39:02.021430 81a4                       Options.WAL_size_limit_MB: 0
+2025/05/25-15:39:02.021434 81a4                        Options.max_write_batch_group_size_bytes: 1048576
+2025/05/25-15:39:02.021437 81a4             Options.manifest_preallocation_size: 4194304
+2025/05/25-15:39:02.021440 81a4                     Options.is_fd_close_on_exec: 1
+2025/05/25-15:39:02.021444 81a4                   Options.advise_random_on_open: 1
+2025/05/25-15:39:02.021447 81a4                    Options.db_write_buffer_size: 0
+2025/05/25-15:39:02.021451 81a4                    Options.write_buffer_manager: 0000027D65CD39A0
+2025/05/25-15:39:02.021454 81a4           Options.random_access_max_buffer_size: 1048576
+2025/05/25-15:39:02.021458 81a4                      Options.use_adaptive_mutex: 0
+2025/05/25-15:39:02.021461 81a4                            Options.rate_limiter: 0000000000000000
+2025/05/25-15:39:02.021493 81a4     Options.sst_file_manager.rate_bytes_per_sec: 0
+2025/05/25-15:39:02.021499 81a4                       Options.wal_recovery_mode: 0
+2025/05/25-15:39:02.021503 81a4                  Options.enable_thread_tracking: 0
+2025/05/25-15:39:02.021506 81a4                  Options.enable_pipelined_write: 0
+2025/05/25-15:39:02.021510 81a4                  Options.unordered_write: 0
+2025/05/25-15:39:02.021514 81a4         Options.allow_concurrent_memtable_write: 1
+2025/05/25-15:39:02.021517 81a4      Options.enable_write_thread_adaptive_yield: 1
+2025/05/25-15:39:02.021520 81a4             Options.write_thread_max_yield_usec: 100
+2025/05/25-15:39:02.021523 81a4            Options.write_thread_slow_yield_usec: 3
+2025/05/25-15:39:02.021527 81a4                               Options.row_cache: None
+2025/05/25-15:39:02.021530 81a4                              Options.wal_filter: None
+2025/05/25-15:39:02.021533 81a4             Options.avoid_flush_during_recovery: 0
+2025/05/25-15:39:02.021537 81a4             Options.allow_ingest_behind: 0
+2025/05/25-15:39:02.021540 81a4             Options.two_write_queues: 0
+2025/05/25-15:39:02.021543 81a4             Options.manual_wal_flush: 0
+2025/05/25-15:39:02.021546 81a4             Options.wal_compression: 0
+2025/05/25-15:39:02.021549 81a4             Options.background_close_inactive_wals: 0
+2025/05/25-15:39:02.021553 81a4             Options.atomic_flush: 0
+2025/05/25-15:39:02.021556 81a4             Options.avoid_unnecessary_blocking_io: 0
+2025/05/25-15:39:02.021559 81a4             Options.prefix_seek_opt_in_only: 0
+2025/05/25-15:39:02.021562 81a4                 Options.persist_stats_to_disk: 0
+2025/05/25-15:39:02.021566 81a4                 Options.write_dbid_to_manifest: 1
+2025/05/25-15:39:02.021569 81a4                 Options.write_identity_file: 1
+2025/05/25-15:39:02.021573 81a4                 Options.log_readahead_size: 0
+2025/05/25-15:39:02.021577 81a4                 Options.file_checksum_gen_factory: Unknown
+2025/05/25-15:39:02.021580 81a4                 Options.best_efforts_recovery: 0
+2025/05/25-15:39:02.021583 81a4                Options.max_bgerror_resume_count: 2147483647
+2025/05/25-15:39:02.021587 81a4            Options.bgerror_resume_retry_interval: 1000000
+2025/05/25-15:39:02.021590 81a4             Options.allow_data_in_errors: 0
+2025/05/25-15:39:02.021593 81a4             Options.db_host_id: __hostname__
+2025/05/25-15:39:02.021596 81a4             Options.enforce_single_del_contracts: true
+2025/05/25-15:39:02.021600 81a4             Options.metadata_write_temperature: kUnknown
+2025/05/25-15:39:02.021603 81a4             Options.wal_write_temperature: kUnknown
+2025/05/25-15:39:02.021606 81a4             Options.max_background_jobs: 2
+2025/05/25-15:39:02.021609 81a4             Options.max_background_compactions: -1
+2025/05/25-15:39:02.021613 81a4             Options.max_subcompactions: 1
+2025/05/25-15:39:02.021616 81a4             Options.avoid_flush_during_shutdown: 0
+2025/05/25-15:39:02.021619 81a4           Options.writable_file_max_buffer_size: 1048576
+2025/05/25-15:39:02.021623 81a4             Options.delayed_write_rate : 16777216
+2025/05/25-15:39:02.021626 81a4             Options.max_total_wal_size: 0
+2025/05/25-15:39:02.021629 81a4             Options.delete_obsolete_files_period_micros: 180000000
+2025/05/25-15:39:02.021633 81a4                   Options.stats_dump_period_sec: 600
+2025/05/25-15:39:02.021637 81a4                 Options.stats_persist_period_sec: 600
+2025/05/25-15:39:02.021640 81a4                 Options.stats_history_buffer_size: 1048576
+2025/05/25-15:39:02.021643 81a4                          Options.max_open_files: 256
+2025/05/25-15:39:02.021647 81a4                          Options.bytes_per_sync: 0
+2025/05/25-15:39:02.021650 81a4                      Options.wal_bytes_per_sync: 0
+2025/05/25-15:39:02.021653 81a4                   Options.strict_bytes_per_sync: 0
+2025/05/25-15:39:02.021656 81a4       Options.compaction_readahead_size: 2097152
+2025/05/25-15:39:02.021663 81a4                  Options.max_background_flushes: -1
+2025/05/25-15:39:02.021685 81a4 Options.daily_offpeak_time_utc: 
+2025/05/25-15:39:02.021691 81a4 Compression algorithms supported:
+2025/05/25-15:39:02.021694 81a4 	kZSTD supported: 0
+2025/05/25-15:39:02.021698 81a4 	kSnappyCompression supported: 1
+2025/05/25-15:39:02.021701 81a4 	kBZip2Compression supported: 0
+2025/05/25-15:39:02.021704 81a4 	kZlibCompression supported: 0
+2025/05/25-15:39:02.021707 81a4 	kLZ4Compression supported: 1
+2025/05/25-15:39:02.021710 81a4 	kXpressCompression supported: 0
+2025/05/25-15:39:02.021713 81a4 	kLZ4HCCompression supported: 1
+2025/05/25-15:39:02.021716 81a4 	kZSTDNotFinalCompression supported: 0
+2025/05/25-15:39:02.021719 81a4 Fast CRC32 supported: Not supported on x86
+2025/05/25-15:39:02.021723 81a4 DMutex implementation: std::mutex
+2025/05/25-15:39:02.021726 81a4 Jemalloc supported: 0
+2025/05/25-15:39:02.024735 81a4               Options.comparator: leveldb.BytewiseComparator
+2025/05/25-15:39:02.024745 81a4           Options.merge_operator: None
+2025/05/25-15:39:02.024749 81a4        Options.compaction_filter: None
+2025/05/25-15:39:02.024752 81a4        Options.compaction_filter_factory: None
+2025/05/25-15:39:02.024755 81a4  Options.sst_partitioner_factory: None
+2025/05/25-15:39:02.024761 81a4         Options.memtable_factory: SkipListFactory
+2025/05/25-15:39:02.024764 81a4            Options.table_factory: BlockBasedTable
+2025/05/25-15:39:02.024788 81a4            table_factory options:   flush_block_policy_factory: FlushBlockBySizePolicyFactory (0000027D65862CD0)
+  cache_index_and_filter_blocks: 0
+  cache_index_and_filter_blocks_with_high_priority: 1
+  pin_l0_filter_and_index_blocks_in_cache: 0
+  pin_top_level_index_and_filter: 1
+  index_type: 0
+  data_block_index_type: 0
+  index_shortening: 1
+  data_block_hash_table_util_ratio: 0.750000
+  checksum: 4
+  no_block_cache: 0
+  block_cache: 0000027D40401EA0
+  block_cache_name: LRUCache
+  block_cache_options:
+    capacity : 33554432
+    num_shard_bits : 6
+    strict_capacity_limit : 0
+    memory_allocator : None
+    high_pri_pool_ratio: 0.500
+    low_pri_pool_ratio: 0.000
+  persistent_cache: 0000000000000000
+  block_size: 4096
+  block_size_deviation: 10
+  block_restart_interval: 16
+  index_block_restart_interval: 1
+  metadata_block_size: 4096
+  partition_filters: 0
+  use_delta_encoding: 1
+  filter_policy: nullptr
+  whole_key_filtering: 1
+  verify_compression: 0
+  read_amp_bytes_per_bit: 0
+  format_version: 6
+  enable_index_compression: 1
+  block_align: 0
+  max_auto_readahead_size: 262144
+  prepopulate_block_cache: 0
+  initial_auto_readahead_size: 8192
+  num_file_reads_for_auto_readahead: 2
+2025/05/25-15:39:02.024793 81a4        Options.write_buffer_size: 10485760
+2025/05/25-15:39:02.024797 81a4  Options.max_write_buffer_number: 2
+2025/05/25-15:39:02.024800 81a4          Options.compression: LZ4
+2025/05/25-15:39:02.024803 81a4                  Options.bottommost_compression: Disabled
+2025/05/25-15:39:02.024807 81a4       Options.prefix_extractor: nullptr
+2025/05/25-15:39:02.024812 81a4   Options.memtable_insert_with_hint_prefix_extractor: nullptr
+2025/05/25-15:39:02.024817 81a4             Options.num_levels: 7
+2025/05/25-15:39:02.024821 81a4        Options.min_write_buffer_number_to_merge: 1
+2025/05/25-15:39:02.024826 81a4     Options.max_write_buffer_number_to_maintain: 0
+2025/05/25-15:39:02.024831 81a4     Options.max_write_buffer_size_to_maintain: 0
+2025/05/25-15:39:02.024835 81a4            Options.bottommost_compression_opts.window_bits: -14
+2025/05/25-15:39:02.024838 81a4                  Options.bottommost_compression_opts.level: 32767
+2025/05/25-15:39:02.024842 81a4               Options.bottommost_compression_opts.strategy: 0
+2025/05/25-15:39:02.024845 81a4         Options.bottommost_compression_opts.max_dict_bytes: 0
+2025/05/25-15:39:02.024849 81a4         Options.bottommost_compression_opts.zstd_max_train_bytes: 0
+2025/05/25-15:39:02.024852 81a4         Options.bottommost_compression_opts.parallel_threads: 1
+2025/05/25-15:39:02.024855 81a4                  Options.bottommost_compression_opts.enabled: false
+2025/05/25-15:39:02.024861 81a4         Options.bottommost_compression_opts.max_dict_buffer_bytes: 0
+2025/05/25-15:39:02.024865 81a4         Options.bottommost_compression_opts.use_zstd_dict_trainer: true
+2025/05/25-15:39:02.024870 81a4            Options.compression_opts.window_bits: -14
+2025/05/25-15:39:02.024875 81a4                  Options.compression_opts.level: 32767
+2025/05/25-15:39:02.024880 81a4               Options.compression_opts.strategy: 0
+2025/05/25-15:39:02.024883 81a4         Options.compression_opts.max_dict_bytes: 0
+2025/05/25-15:39:02.024890 81a4         Options.compression_opts.zstd_max_train_bytes: 0
+2025/05/25-15:39:02.024895 81a4         Options.compression_opts.use_zstd_dict_trainer: true
+2025/05/25-15:39:02.024899 81a4         Options.compression_opts.parallel_threads: 1
+2025/05/25-15:39:02.024903 81a4                  Options.compression_opts.enabled: false
+2025/05/25-15:39:02.024907 81a4         Options.compression_opts.max_dict_buffer_bytes: 0
+2025/05/25-15:39:02.024911 81a4      Options.level0_file_num_compaction_trigger: 4
+2025/05/25-15:39:02.024916 81a4          Options.level0_slowdown_writes_trigger: 20
+2025/05/25-15:39:02.024920 81a4              Options.level0_stop_writes_trigger: 36
+2025/05/25-15:39:02.024923 81a4                   Options.target_file_size_base: 67108864
+2025/05/25-15:39:02.024926 81a4             Options.target_file_size_multiplier: 1
+2025/05/25-15:39:02.024930 81a4                Options.max_bytes_for_level_base: 268435456
+2025/05/25-15:39:02.024933 81a4 Options.level_compaction_dynamic_level_bytes: 1
+2025/05/25-15:39:02.024940 81a4          Options.max_bytes_for_level_multiplier: 10.000000
+2025/05/25-15:39:02.024946 81a4 Options.max_bytes_for_level_multiplier_addtl[0]: 1
+2025/05/25-15:39:02.024951 81a4 Options.max_bytes_for_level_multiplier_addtl[1]: 1
+2025/05/25-15:39:02.024954 81a4 Options.max_bytes_for_level_multiplier_addtl[2]: 1
+2025/05/25-15:39:02.024958 81a4 Options.max_bytes_for_level_multiplier_addtl[3]: 1
+2025/05/25-15:39:02.024961 81a4 Options.max_bytes_for_level_multiplier_addtl[4]: 1
+2025/05/25-15:39:02.024964 81a4 Options.max_bytes_for_level_multiplier_addtl[5]: 1
+2025/05/25-15:39:02.024967 81a4 Options.max_bytes_for_level_multiplier_addtl[6]: 1
+2025/05/25-15:39:02.024970 81a4       Options.max_sequential_skip_in_iterations: 8
+2025/05/25-15:39:02.024974 81a4                    Options.max_compaction_bytes: 1677721600
+2025/05/25-15:39:02.024977 81a4                        Options.arena_block_size: 1048576
+2025/05/25-15:39:02.024981 81a4   Options.soft_pending_compaction_bytes_limit: 68719476736
+2025/05/25-15:39:02.024986 81a4   Options.hard_pending_compaction_bytes_limit: 274877906944
+2025/05/25-15:39:02.024991 81a4                Options.disable_auto_compactions: 0
+2025/05/25-15:39:02.024995 81a4                        Options.compaction_style: kCompactionStyleLevel
+2025/05/25-15:39:02.024998 81a4                          Options.compaction_pri: kMinOverlappingRatio
+2025/05/25-15:39:02.025003 81a4 Options.compaction_options_universal.size_ratio: 1
+2025/05/25-15:39:02.025009 81a4 Options.compaction_options_universal.min_merge_width: 2
+2025/05/25-15:39:02.025014 81a4 Options.compaction_options_universal.max_merge_width: 4294967295
+2025/05/25-15:39:02.025018 81a4 Options.compaction_options_universal.max_size_amplification_percent: 200
+2025/05/25-15:39:02.025021 81a4 Options.compaction_options_universal.compression_size_percent: -1
+2025/05/25-15:39:02.025025 81a4 Options.compaction_options_universal.stop_style: kCompactionStopStyleTotalSize
+2025/05/25-15:39:02.025028 81a4 Options.compaction_options_universal.max_read_amp: -1
+2025/05/25-15:39:02.025031 81a4 Options.compaction_options_fifo.max_table_files_size: 1073741824
+2025/05/25-15:39:02.025034 81a4 Options.compaction_options_fifo.allow_compaction: 0
+2025/05/25-15:39:02.025038 81a4                   Options.table_properties_collectors: 
+2025/05/25-15:39:02.025042 81a4                   Options.inplace_update_support: 0
+2025/05/25-15:39:02.025045 81a4                 Options.inplace_update_num_locks: 10000
+2025/05/25-15:39:02.025084 81a4               Options.memtable_prefix_bloom_size_ratio: 0.000000
+2025/05/25-15:39:02.025093 81a4               Options.memtable_whole_key_filtering: 0
+2025/05/25-15:39:02.025097 81a4   Options.memtable_huge_page_size: 0
+2025/05/25-15:39:02.025100 81a4                           Options.bloom_locality: 0
+2025/05/25-15:39:02.025103 81a4                    Options.max_successive_merges: 0
+2025/05/25-15:39:02.025109 81a4             Options.strict_max_successive_merges: 0
+2025/05/25-15:39:02.025115 81a4                Options.optimize_filters_for_hits: 0
+2025/05/25-15:39:02.025119 81a4                Options.paranoid_file_checks: 0
+2025/05/25-15:39:02.025122 81a4                Options.force_consistency_checks: 1
+2025/05/25-15:39:02.025125 81a4                Options.report_bg_io_stats: 0
+2025/05/25-15:39:02.025134 81a4                               Options.ttl: 2592000
+2025/05/25-15:39:02.025144 81a4          Options.periodic_compaction_seconds: 0
+2025/05/25-15:39:02.025150 81a4                        Options.default_temperature: kUnknown
+2025/05/25-15:39:02.025155 81a4  Options.preclude_last_level_data_seconds: 0
+2025/05/25-15:39:02.025162 81a4    Options.preserve_internal_time_seconds: 0
+2025/05/25-15:39:02.025167 81a4                       Options.enable_blob_files: false
+2025/05/25-15:39:02.025172 81a4                           Options.min_blob_size: 0
+2025/05/25-15:39:02.025178 81a4                          Options.blob_file_size: 268435456
+2025/05/25-15:39:02.025184 81a4                   Options.blob_compression_type: NoCompression
+2025/05/25-15:39:02.025190 81a4          Options.enable_blob_garbage_collection: false
+2025/05/25-15:39:02.025197 81a4      Options.blob_garbage_collection_age_cutoff: 0.250000
+2025/05/25-15:39:02.025203 81a4 Options.blob_garbage_collection_force_threshold: 1.000000
+2025/05/25-15:39:02.025207 81a4          Options.blob_compaction_readahead_size: 0
+2025/05/25-15:39:02.025211 81a4                Options.blob_file_starting_level: 0
+2025/05/25-15:39:02.025215 81a4         Options.experimental_mempurge_threshold: 0.000000
+2025/05/25-15:39:02.025218 81a4            Options.memtable_max_range_deletions: 0
+2025/05/25-15:39:02.051843 81a4 DB pointer 0000027D658A6440

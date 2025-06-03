@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalles de Conversación - AVA Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .conversation-details-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .details-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .info-card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-left: 4px solid #667eea;
+        }
+        
+        .info-card h3 {
+            margin: 0 0 20px 0;
+            color: #333;
+            font-size: 1.2em;
+        }
+        
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .stat-item:last-child {
+            border-bottom: none;
+        }
+        
+        .conversation-timeline {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .timeline-item {
+            display: flex;
+            margin-bottom: 25px;
+            position: relative;
+        }
+        
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: 30px;
+            top: 50px;
+            bottom: -25px;
+            width: 2px;
+            background: #e9ecef;
+        }
+        
+        .timeline-item:last-child::before {
+            display: none;
+        }
+        
+        .timeline-icon {
+            flex-shrink: 0;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            margin-right: 20px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .user-icon {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+        
+        .bot-icon {
+            background: #f3e5f5;
+            color: #7b1fa2;
+        }
+        
+        .timeline-content {
+            flex: 1;
+            background: #f8f9fa;
+            padding: 15px 20px;
+            border-radius: 10px;
+            position: relative;
+        }
+        
+        .timeline-content::before {
+            content: '';
+            position: absolute;
+            left: -10px;
+            top: 20px;
+            border: 10px solid transparent;
+            border-right-color: #f8f9fa;
+        }
+        
+        .message-time {
+            font-size: 0.8em;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        
+        .message-text {
+            line-height: 1.6;
+            color: #333;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .btn-action {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #f5c6cb;
+            text-align: center;
+        }
+        
+        @media (max-width: 768px) {
+            .details-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .timeline-item {
+                flex-direction: column;
+            }
+            
+            .timeline-icon {
+                align-self: flex-start;
+                margin-bottom: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="conversation-details-container">
+        
+        {% if error %}
+            <div class="error-message">
+                <i class="fas fa-exclamation-triangle"></i>
+                <h3>Error al cargar la conversación</h3>
+                <p>{{ error }}</p>
+                <a href="{{ url_for('dashboard.conversations') }}" class="btn-action btn-primary">
+                    <i class="fas fa-arrow-left"></i> Volver a Conversaciones
+                </a>
+            </div>
+        {% else %}
+            <!-- Header con información principal -->
+            <div class="details-header">
+                <h1><i class="fas fa-comments"></i> Detalles de Conversación</h1>
+                <p>Conversación ID: {{ conversation_id }} | Usuario: {{ conversation.user_id }}</p>
+                
+                <div class="action-buttons">
+                    <a href="{{ url_for('dashboard.conversations') }}" class="btn-action btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Volver
+                    </a>
+                    <button onclick="exportFullConversation()" class="btn-action btn-success">
+                        <i class="fas fa-download"></i> Exportar Completa
+                    </button>
+                    <button onclick="shareConversation()" class="btn-action btn-primary">
+                        <i class="fas fa-share"></i> Compartir
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Grid de información -->
+            <div class="details-grid">
+                <!-- Información del usuario -->
+                <div class="info-card">
+                    <h3><i class="fas fa-user"></i> Información del Usuario</h3>
+                    <div class="stat-item">
+                        <span>Usuario ID:</span>
+                        <strong>{{ conversation.user_id }}</strong>
+                    </div>
+                    <div class="stat-item">
+                        <span>Total de mensajes:</span>
+                        <strong>{{ user_stats.total_messages }}</strong>
+                    </div>
+                    <div class="stat-item">
+                        <span>Primera interacción:</span>
+                        <strong>{{ user_stats.first_interaction|datetimeformat if user_stats.first_interaction else 'N/A' }}</strong>
+                    </div>
+                    <div class="stat-item">
+                        <span>Última interacción:</span>
+                        <strong>{{ user_stats.last_interaction|datetimeformat if user_stats.last_interaction else 'N/A' }}</strong>
+                    </div>
+                    {% if user_stats.conversation_span %}
+                    <div class="stat-item">
+                        <span>Duración total:</span>
+                        <strong>{{ user_stats.conversation_span }}</strong>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Estadísticas de la conversación -->
+                <div class="info-card">
+                    <h3><i class="fas fa-chart-line"></i> Estadísticas</h3>
+                    <div class="stat-item">
+                        <span>Estado:</span>
+                        <span style="color: #28a745; font-weight: bold;">
+                            <i class="fas fa-check-circle"></i> Completada
+                        </span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Fecha actual:</span>
+                        <strong>{{ conversation.timestamp|datetimeformat }}</strong>
+                    </div>
+                    <div class="stat-item">
+                        <span>Longitud mensaje:</span>
+                        <strong>{{ conversation.content|length }} caracteres</strong>
+                    </div>
+                    <div class="stat-item">
+                        <span>Longitud respuesta:</span>
+                        <strong>{{ conversation.response|length }} caracteres</strong>
+                    </div>
+                    <div class="stat-item">
+                        <span>Tipo de entrada:</span>
+                        <strong>{{ conversation.entry_type }}</strong>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Timeline de conversación completa -->
+            <div class="conversation-timeline">
+                <h3><i class="fas fa-history"></i> Historial Completo de Conversaciones</h3>
+                <p style="margin-bottom: 30px; color: #666;">
+                    Mostrando todas las interacciones entre {{ conversation.user_id }} y AVA
+                </p>
+                
+                {% for message in user_history %}
+                    <!-- Mensaje del usuario -->
+                    <div class="timeline-item">
+                        <div class="timeline-icon user-icon">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="timeline-content">
+                            <div class="message-time">
+                                <i class="fas fa-clock"></i> {{ message.timestamp|datetimeformat }}
+                            </div>
+                            <div class="message-text">
+                                <strong>Usuario:</strong><br>
+                                {{ message.content }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Respuesta de AVA -->
+                    <div class="timeline-item">
+                        <div class="timeline-icon bot-icon">
+                            <i class="fas fa-robot"></i>
+                        </div>
+                        <div class="timeline-content">
+                            <div class="message-time">
+                                <i class="fas fa-clock"></i> {{ message.timestamp|datetimeformat }}
+                            </div>
+                            <div class="message-text">
+                                <strong>AVA:</strong><br>
+                                {{ message.response }}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+    
+    <script>
+        function exportFullConversation() {
+            console.log('📥 Exportando conversación completa...');
+            
+            fetch(`/api/conversation/{{ conversation_id }}/export`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Crear y descargar archivo
+                        const blob = new Blob([data.content], { type: 'text/plain' });
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = data.filename;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        window.URL.revokeObjectURL(url);
+                        
+                        // Mostrar notificación
+                        showNotification('✅ Conversación exportada exitosamente', 'success');
+                    } else {
+                        showNotification('❌ Error al exportar: ' + data.error, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showNotification('❌ Error de conexión al exportar', 'error');
+                });
+        }
+        
+        function shareConversation() {
+            const url = window.location.href;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Detalles de Conversación AVA',
+                    text: 'Conversación con {{ conversation.user_id }}',
+                    url: url
+                });
+            } else {
+                // Fallback: copiar al portapapeles
+                navigator.clipboard.writeText(url).then(() => {
+                    showNotification('🔗 Enlace copiado al portapapeles', 'success');
+                }).catch(() => {
+                    showNotification('❌ No se pudo copiar el enlace', 'error');
+                });
+            }
+        }
+        
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 15px 20px;
+                border-radius: 5px;
+                color: white;
+                font-weight: bold;
+                z-index: 10000;
+                animation: slideIn 0.3s ease;
+                background-color: ${type === 'success' ? '#28a745' : '#dc3545'};
+            `;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+        
+        // CSS para animación
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

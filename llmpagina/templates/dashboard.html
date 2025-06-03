@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#1c1c1c">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>Dashboard - AVA - Agentes Virtuales Avanzados</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/chat-bubble.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Estilos adicionales para mejorar la navegación móvil */
+        @media (max-width: 768px) {
+            nav ul {
+                padding: 15px;
+            }
+            
+            nav ul li {
+                margin: 8px 0;
+                width: 100%;
+            }
+            
+            nav ul li a {
+                display: block;
+                padding: 12px 15px;
+                text-align: center;
+                background-color: rgba(255, 215, 0, 0.05);
+                border-radius: 5px;
+                font-size: 16px;
+                font-weight: 500;
+            }
+            
+            nav ul li a:hover, 
+            nav ul li a.active {
+                background-color: var(--primary-color);
+                color: var(--secondary-color);
+        }
+        
+            .mobile-nav-actions {
+            display: flex;
+                justify-content: space-between;
+                margin-top: 15px;
+                padding: 0 15px;
+            }
+            
+            .mobile-nav-actions a {
+                flex: 1;
+                margin: 0 5px;
+                padding: 12px;
+                text-align: center;
+                background-color: var(--primary-color);
+                color: var(--secondary-color);
+                border-radius: 5px;
+                font-weight: 600;
+                text-decoration: none;
+        }
+        
+            .mobile-nav-actions a:first-child {
+                background-color: transparent;
+                border: 1px solid var(--primary-color);
+                color: var(--primary-color);
+            }
+        }
+    </style>
+</head>
+<body class="dashboard-page">
+    <header>
+        <div class="container">
+            <div class="logo">
+                <a href="/">
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="AVA Logo">
+                <div class="logo-text">
+                    <h1>AVA</h1>
+                    <p>AGENTES VIRTUALES AVANZADOS</p>
+                </div>
+                </a>
+            </div>
+            <div class="menu-toggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="/">Inicio</a></li>
+                    <li><a href="/dashboard" class="active">Dashboard</a></li>
+                    <li><a href="/logout">Cerrar Sesión</a></li>
+                </ul>
+                <!-- Botones adicionales para móvil -->
+                <div class="mobile-nav-actions">
+                    <a href="/" class="mobile-home-btn"><i class="fas fa-home"></i> Inicio</a>
+                    <a href="/logout" class="mobile-logout-btn"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</a>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <div class="dashboard-container">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h3>Panel de Control</h3>
+            </div>
+            <div class="sidebar-menu">
+                <li{% if active_menu == "dashboard" %} class="active"{% endif %}><a href="{{ url_for('dashboard.dashboard') }}"><i class="fas fa-comments"></i> Conversaciones</a></li>
+                <li{% if active_menu == "clients" %} class="active"{% endif %}><a href="{{ url_for('dashboard.clients') }}"><i class="fas fa-user-friends"></i> Clientes</a></li>
+                <li{% if active_menu == "stats" %} class="active"{% endif %}><a href="{{ url_for('dashboard.statistics') }}"><i class="fas fa-chart-bar"></i> Estadísticas</a></li>
+                <li{% if active_menu == "config" %} class="active"{% endif %}><a href="{{ url_for('dashboard.configuration') }}"><i class="fas fa-cog"></i> Configuración</a></li>
+            </div>
+            <div class="sidebar-footer">
+                <p>AVA v1.0</p>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="dashboard-header">
+                <h2>Dashboard de Conversaciones</h2>
+                <div class="header-actions">
+                    <div class="search-container">
+                        <input type="text" id="searchInput" placeholder="Buscar conversación...">
+                        <button type="button" id="searchBtn"><i class="fas fa-search"></i></button>
+                    </div>
+                    <div class="filter-container">
+                        <select id="timeFilter">
+                            <option value="all">Todo el tiempo</option>
+                            <option value="today">Hoy</option>
+                            <option value="week">Esta semana</option>
+                            <option value="month">Este mes</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stats-cards">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-comments"></i>
+                    </div>
+                    <div class="stat-details">
+                        <h3>{{ stats.total_conversations }}</h3>
+                        <p>Conversaciones Totales</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-details">
+                        <h3>{{ stats.unique_users }}</h3>
+                        <p>Usuarios Únicos</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-details">
+                        <h3>{{ stats.avg_response_time }}s</h3>
+                        <p>Tiempo de Respuesta</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-calendar"></i>
+                    </div>
+                    <div class="stat-details">
+                        <h3>{{ stats.today_conversations }}</h3>
+                        <p>Conversaciones Hoy</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="conversation-list-container">
+                <h3>Conversaciones Recientes</h3>
+                <div class="table-responsive">
+                <table class="conversation-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Usuario</th>
+                            <th>Fecha</th>
+                            <th>Mensajes</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for conversation in conversations %}
+                        <tr>
+                            <td>{{ conversation.id[:8] }}...</td>
+                            <td>{{ conversation.user_id }}</td>
+                            <td>{{ conversation.last_updated }}</td>
+                            <td>{{ conversation.message_count }}</td>
+                            <td>
+                                <span class="status-badge {{ conversation.status_class }}">
+                                    {{ conversation.status }}
+                                </span>
+                            </td>
+                            <td class="actions">
+                                <button class="action-btn view-btn" data-id="{{ conversation.id }}">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="action-btn export-btn" data-id="{{ conversation.id }}">
+                                    <i class="fas fa-download"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                </div>
+                
+                <div class="pagination">
+                    <button id="prevPage" {% if current_page == 1 %}disabled{% endif %}>
+                        <i class="fas fa-chevron-left"></i> Anterior
+                    </button>
+                    <span class="page-info">Página {{ current_page }} de {{ total_pages }}</span>
+                    <button id="nextPage" {% if current_page == total_pages %}disabled{% endif %}>
+                        Siguiente <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para ver detalles de conversación -->
+    <div id="conversationModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Detalles de conversación</h3>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="conversation-details">
+                    <div class="conversation-info">
+                        <p><strong>ID:</strong> <span id="modal-conversation-id"></span></p>
+                        <p><strong>Usuario:</strong> <span id="modal-user-id"></span></p>
+                        <p><strong>Fecha de creación:</strong> <span id="modal-created-at"></span></p>
+                        <p><strong>Última actualización:</strong> <span id="modal-last-updated"></span></p>
+                    </div>
+                    <div class="conversation-messages" id="modal-messages">
+                        <!-- Los mensajes se cargarán dinámicamente -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+     
+    <!-- Modal de Configuración -->
+    <div id="configModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Configuración del Sistema</h3>
+                <span class="close-modal" onclick="closeConfigModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="config-section">
+                    <h4>Configuración de Ava</h4>
+                    <div class="config-item">
+                        <label>Estado del Sistema:</label>
+                        <span id="system-status">Activo</span>
+                    </div>
+                    <div class="config-item">
+                        <label>Modo de Respuesta:</label>
+                        <select id="response-mode">
+                            <option value="normal">Normal</option>
+                            <option value="verbose">Detallado</option>
+                            <option value="concise">Conciso</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Incluir el componente de chat -->
+    {% include 'components/chat_bubble.html' %}
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Mobile menu toggle
+            const menuToggle = document.querySelector('.menu-toggle');
+            const nav = document.querySelector('nav');
+            
+            if (menuToggle) {
+                menuToggle.addEventListener('click', function() {
+                    nav.classList.toggle('active');
+                    menuToggle.classList.toggle('active');
+                });
+            }
+            
+            // Cerrar menú al hacer clic en un enlace
+            const navLinks = document.querySelectorAll('nav a');
+            navLinks.forEach(link => {
+                link.addEventListener('click', function() {
+                    if (window.innerWidth <= 768) {
+                        nav.classList.remove('active');
+                        menuToggle.classList.remove('active');
+                    }
+                });
+            });
+        });
+    </script>
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/chat-bubble.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#1c1c1c">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>{% block title %}AVA - Agentes Virtuales Avanzados{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/chat-bubble.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    {% block additional_styles %}{% endblock %}
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="logo">
+                <a href="{{ url_for('index.index') }}">
+                    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="AVA Logo">
+                    <div class="logo-text">
+                        <h1>AVA</h1>
+                        <p>AGENTES VIRTUALES AVANZADOS</p>
+                    </div>
+                </a>
+            </div>
+            <div class="menu-toggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="{{ url_for('index.index') }}" {% if request.path == '/' %}class="active"{% endif %}>Inicio</a></li>
+                    <li><a href="{{ url_for('index.index') }}#beneficios">Beneficios</a></li>
+                    <li><a href="{{ url_for('index.index') }}#caracteristicas" {% if 'caracteristicas' in request.path %}class="active"{% endif %}>Características</a></li>
+                    <li><a href="{{ url_for('news.noticias') }}" {% if 'noticias' in request.path or 'articulo' in request.path %}class="active"{% endif %}>Noticias</a></li>
+                    <li><a href="{{ url_for('index.index') }}#contacto">Contacto</a></li>
+                    <li><a href="{{ url_for('auth.login') }}" class="login-link acceso-btn"><i class="fas fa-user"></i> Acceso</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-logo">
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="AVA Logo">
+                <div class="logo-text">
+                    <h3>AVA</h3>
+                    <p>AGENTES VIRTUALES AVANZADOS</p>
+                </div>
+            </div>
+            <div class="footer-links">
+                <div class="footer-links-column">
+                    <h4>Empresa</h4>
+                    <ul>
+                        <li><a href="{{ url_for('index.index') }}#inicio">Sobre nosotros</a></li>
+                        <li><a href="#">Careers</a></li>
+                        <li><a href="{{ url_for('news.noticias') }}">Blog</a></li>
+                        <li><a href="{{ url_for('dashboard.dashboard') }}"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+                    </ul>
+                </div>
+                <div class="footer-links-column">
+                    <h4>Servicios</h4>
+                    <ul>
+                        <li><a href="#">Chatbots IA</a></li>
+                        <li><a href="#">Integración CRM</a></li>
+                        <li><a href="#">Análisis de datos</a></li>
+                    </ul>
+                </div>
+                <div class="footer-links-column">
+                    <h4>Legal</h4>
+                    <ul>
+                        <li><a href="#">Términos de servicio</a></li>
+                        <li><a href="#">Política de privacidad</a></li>
+                        <li><a href="#">Cookies</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; {{ now.year }} AVA - Agentes Virtuales Avanzados. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+    <!-- ✅ CHAT BUBBLE - DISPONIBLE EN TODAS LAS PÁGINAS -->
+   
+
+    <!-- ✅ SOLO EL SCRIPT - EL HTML SE GENERA AUTOMÁTICAMENTE -->
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/chat-bubble.js') }}"></script>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

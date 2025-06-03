@@ -1,0 +1,15 @@
+{
+  "image_filename": "novedades_en_inteligencia_artificial_y_tecnología.png",
+  "article_title": "Novedades en Inteligencia Artificial y Tecnología",
+  "article_file": "novedades_en_inteligencia_artificial_y_tecnología_20250603.json",
+  "prompt": "Here is the detailed prompt for generating an image:\n\n\"Create a conceptual image that captures the essence of the article about the latest advancements in artificial intelligence and technology. \n\nThe image should feature a futuristic cityscape with towering skyscrapers and neon lights. In the foreground, a humanoid robot stands tall, with its eyes glowing bright blue. The robot should be holding a small, sleek device that represents the new AI model capable of learning autonomously. \n\nIn the background, a subtle gradient of colors should transition from deep blues to vibrant oranges, symbolizing the fusion of technology and innovation. The entire image should have a high-contrast, high-contrast, with bold lines and geometric shapes. \n\nThe color palette should be a combination of neon blues, oranges, and purples, with accents of silver and gold. Incorporate subtle highlights and shadows to give the image a sense of depth and dimensionality. \n\nThe composition should be symmetrical, with the robot standing at the center of the image, surrounded by the cityscape. \n\nStyle: Commercial, futuristic, and artistic, with a bold and modern aesthetic. \n\nShooting style: Close-up, with detailed focus on the robot's face and the device it's holding. \n\nSymbolic elements: Incorporate subtle robotic gears, wires, and circuits into the cityscape, highlighting the integration of technology and innovation. The glowing blue eyes of the robot should represent its advanced AI capabilities.\"",
+  "model": "FLUX.1-schnell-Free",
+  "generated_at": "2025-06-03T02:54:13.526006",
+  "keywords": [
+    "inteligencia artificial",
+    "tecnología",
+    "IA",
+    "machine learning",
+    "deep learning"
+  ]
+}

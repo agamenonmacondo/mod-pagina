@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#1c1c1c">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>AVA - Agentes Virtuales Avanzados</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/chat-bubble.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="logo">
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="AVA Logo">
+                <div class="logo-text">
+                    <h1>AVA</h1>
+                    <p>AGENTES VIRTUALES AVANZADOS</p>
+                </div>
+            </div>
+            <div class="menu-toggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="#inicio">Inicio</a></li>
+                    <li><a href="#beneficios">Beneficios</a></li>
+                    <li><a href="#caracteristicas">Características</a></li>
+                    <li><a href="#contacto">Contacto</a></li>
+                    <li><a href="{{ url_for('news.noticias') }}">Noticias</a></li>
+                    <li><a href="{{ url_for('auth.login') }}" class="login-link acceso-btn"><i class="fas fa-user"></i> Acceso</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <section id="inicio" class="hero">
+        <div class="container">
+            <div class="hero-content fade-in">
+                <h2>Revoluciona tu atención al cliente con IA</h2>
+                <p>Implementa agentes virtuales avanzados que transformarán la experiencia de tus clientes y optimizarán tus procesos de atención</p>
+                <a href="#contacto" class="btn">Contáctanos</a>
+            </div>
+            <div class="hero-image fade-in">
+                <img src="{{ url_for('static', filename='images/hero-image.png') }}" alt="Agente Virtual">
+            </div>
+        </div>
+    </section>
+
+    <section id="beneficios" class="benefits">
+        <div class="container">
+            <h2 class="section-title fade-in">Beneficios que transforman tu negocio</h2>
+            <div class="benefits-grid">
+                <div class="benefit-card fade-in">
+                    <div class="icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <h3>Atención 24/7</h3>
+                    <p>Ofrece soporte continuo a tus clientes sin importar el día u hora, mejorando la satisfacción y fidelización.</p>
+                </div>
+                <div class="benefit-card fade-in">
+                    <div class="icon">
+                        <i class="fas fa-bolt"></i>
+                    </div>
+                    <h3>Respuestas instantáneas</h3>
+                    <p>Elimina los tiempos de espera con respuestas inmediatas a las consultas frecuentes de tus clientes.</p>
+                </div>
+                <div class="benefit-card fade-in">
+                    <div class="icon">
+                        <i class="fas fa-cogs"></i>
+                    </div>
+                    <h3>Integración multicanal</h3>
+                    <p>Conecta con tus clientes en todos los canales: web, redes sociales, WhatsApp y más en una sola plataforma.</p>
+                </div>
+                <div class="benefit-card fade-in">
+                    <div class="icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <h3>Optimización de costos</h3>
+                    <p>Reduce hasta un 40% los costos operativos de tu centro de atención al cliente automatizando procesos repetitivos.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="caracteristicas" class="features">
+        <div class="container">
+            <h2 class="section-title fade-in">Características avanzadas</h2>
+            <div class="features-content">
+                <div class="features-text fade-in">
+                    <div class="feature-item">
+                        <h3><i class="fas fa-robot"></i> Inteligencia Artificial Avanzada</h3>
+                        <p>Utilizamos modelos de lenguaje de última generación para ofrecer conversaciones naturales y resolución de problemas complejos.</p>
+                    </div>
+                    <div class="feature-item">
+                        <h3><i class="fas fa-brain"></i> Aprendizaje Continuo</h3>
+                        <p>Nuestros agentes mejoran constantemente, aprendiendo de cada interacción para ofrecer respuestas más precisas.</p>
+                    </div>
+                    <div class="feature-item">
+                        <h3><i class="fas fa-comment-dots"></i> Personalización Total</h3>
+                        <p>Adaptamos nuestros agentes virtuales a tu marca, tono de comunicación y conocimientos específicos de tu industria.</p>
+                    </div>
+                </div>
+                <div class="features-image fade-in">
+                    <img src="{{ url_for('static', filename='images/features-image.png') }}" alt="Características Avanzadas">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="contacto" class="contact">
+        <div class="container">
+            <h2 class="section-title fade-in">¿Listo para transformar tu atención al cliente?</h2>
+            <div class="contact-content">
+                <div class="contact-info fade-in">
+                    <h3>Contáctanos</h3>
+                    <p>Nuestro equipo de expertos te ayudará a implementar la solución perfecta para tu negocio.</p>
+                    <div class="contact-details">
+                        <p><i class="fas fa-envelope"></i> alejandrosevillla@agenteava.com</p>
+                        <p><i class="fas fa-phone"></i> +573504017710</p>
+                        <p><i class="fas fa-map-marker-alt"></i> bogota, colombia</p>
+                    </div>
+                    <div class="social-links">
+                        <a href="#" class="social-icon"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" class="social-icon"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="social-icon"><i class="fab fa-linkedin-in"></i></a>
+                        <a href="#" class="social-icon"><i class="fab fa-instagram"></i></a>
+                    </div>
+                </div>
+                <div class="contact-form-container fade-in">
+                    <form class="contact-form" id="contactForm">
+                        <div class="form-group">
+                            <label for="name">Nombre</label>
+                            <input type="text" id="name" name="name" placeholder="Tu nombre">
+                            <span id="name-error" class="error-message">Por favor ingresa tu nombre</span>
+                        </div>
+                        <div class="form-group">
+                            <label for="email">Email</label>
+                            <input type="email" id="email" name="email" placeholder="Tu email">
+                            <span id="email-error" class="error-message">Por favor ingresa un email válido</span>
+                        </div>
+                        <div class="form-group">
+                            <label for="message">Mensaje</label>
+                            <textarea id="message" name="message" placeholder="¿En qué podemos ayudarte?"></textarea>
+                            <span id="message-error" class="error-message">Por favor ingresa un mensaje</span>
+                        </div>
+                        <button type="submit" class="btn">Enviar Mensaje</button>
+                    </form>
+                    <div class="success-message">
+                        <i class="fas fa-check-circle"></i>
+                        <p>¡Gracias por contactarnos! Hemos iniciado una conversación con nuestro agente virtual para atenderte de inmediato.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-logo">
+                    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="AVA Logo">
+                    <div class="logo-text">
+                        <h3>AVA</h3>
+                        <p>AGENTES VIRTUALES AVANZADOS</p>
+                    </div>
+                </div>
+                <div class="footer-links">
+                    <div class="footer-links-column">
+                        <h4>Empresa</h4>
+                        <ul>
+                            <li><a href="#">Sobre nosotros</a></li>
+                            <li><a href="#">Careers</a></li>
+                            <li><a href="#">Blog</a></li>
+                            <li><a href="{{ url_for('dashboard.dashboard') }}"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-links-column">
+                        <h4>Servicios</h4>
+                        <ul>
+                            <li><a href="#">Chatbots IA</a></li>
+                            <li><a href="#">Integración CRM</a></li>
+                            <li><a href="#">Análisis de datos</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-links-column">
+                        <h4>Legal</h4>
+                        <ul>
+                            <li><a href="#">Términos de servicio</a></li>
+                            <li><a href="#">Política de privacidad</a></li>
+                            <li><a href="#">Cookies</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 AVA - Agentes Virtuales Avanzados. Todos los derechos reservados.</p>
+            </div>
+        </div>
+    </footer>
+
+    
+    <style>
+        /* Mejoras para dispositivos móviles */
+        @media (max-width: 768px) {
+            .hero .container {
+                flex-direction: column;
+                padding: 100px 20px 40px;
+            }
+            
+            .hero-content, .hero-image {
+                width: 100%;
+                text-align: center;
+            }
+            
+            .hero-image img {
+                max-width: 80%;
+                margin-top: 30px;
+            }
+            
+            .benefits-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .features-content {
+                flex-direction: column;
+            }
+            
+            .features-text, .features-image {
+                width: 100%;
+            }
+            
+            .features-image {
+                margin-top: 30px;
+                text-align: center;
+            }
+            
+            .contact-content {
+                flex-direction: column;
+            }
+            
+            .contact-info, .contact-form-container {
+                width: 100%;
+                margin-bottom: 30px;
+            }
+            
+            .footer-links {
+                flex-direction: column;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .hero h2 {
+                font-size: 2rem;
+            }
+            
+            .section-title {
+                font-size: 1.8rem;
+            }
+        }
+        
+        /* Estilos para el mensaje de éxito */
+        .success-message {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 30px;
+            background-color: rgba(255, 215, 0, 0.1);
+            border-radius: 10px;
+            border: 1px solid var(--primary-color);
+            margin: 20px 0;
+        }
+        
+        .success-message i {
+            font-size: 48px;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+        }
+        
+        .success-message p {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            color: var(--text-color);
+        }
+        
+        /* Estilos para los mensajes de error */
+        .error-message {
+            display: none;
+            color: #ff6b6b;
+            font-size: 0.85rem;
+            margin-top: 5px;
+        }
+    </style>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/chat-bubble.js') }}"></script>
+    <script>
+        // Script para el formulario de contacto
+        document.addEventListener('DOMContentLoaded', function() {
+            const contactForm = document.getElementById('contactForm');
+            const successMessage = document.querySelector('.success-message');
+            
+            if (contactForm) {
+                contactForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    // Validar el formulario
+                    const nameInput = document.getElementById('name');
+                    const emailInput = document.getElementById('email');
+                    const messageInput = document.getElementById('message');
+                    
+                    const nameError = document.getElementById('name-error');
+                    const emailError = document.getElementById('email-error');
+                    const messageError = document.getElementById('message-error');
+                    
+                    // Ocultar mensajes de error previos
+                    nameError.style.display = 'none';
+                    emailError.style.display = 'none';
+                    messageError.style.display = 'none';
+                    
+                    // Validar campos
+                    let isValid = true;
+                    
+                    if (!nameInput.value.trim()) {
+                        nameError.style.display = 'block';
+                        isValid = false;
+                    }
+                    
+                    if (!emailInput.value.trim() || !emailInput.value.includes('@')) {
+                        emailError.style.display = 'block';
+                        isValid = false;
+                    }
+                    
+                    if (!messageInput.value.trim()) {
+                        messageError.style.display = 'block';
+                        isValid = false;
+                    }
+                    
+                    if (isValid) {
+                        // Guardar los datos del formulario en sessionStorage para recuperarlos después de la redirección
+                        sessionStorage.setItem('contactName', nameInput.value.trim());
+                        sessionStorage.setItem('contactEmail', emailInput.value.trim());
+                        sessionStorage.setItem('contactMessage', messageInput.value.trim());
+                        
+                        // Mostrar mensaje de éxito
+                        contactForm.style.display = 'none';
+                        successMessage.style.display = 'flex';
+                        
+                        // Iniciar chat con el agente virtual usando los datos del formulario
+                        if (window.startChatFromContactForm) {
+                            window.startChatFromContactForm(
+                                nameInput.value.trim(),
+                                emailInput.value.trim(),
+                                messageInput.value.trim()
+                            );
+                        }
+                        
+                        // Opcional: Enviar datos a un endpoint del servidor
+                        // fetch('/submit-contact', {
+                        //     method: 'POST',
+                        //     headers: { 'Content-Type': 'application/json' },
+                        //     body: JSON.stringify({
+                        //         name: nameInput.value.trim(),
+                        //         email: emailInput.value.trim(),
+                        //         message: messageInput.value.trim()
+                        //     })
+                        // });
+                    }
+                });
+            }
+            
+            // Verificar si hay datos de contacto almacenados en sessionStorage
+            const storedName = sessionStorage.getItem('contactName');
+            const storedEmail = sessionStorage.getItem('contactEmail');
+            const storedMessage = sessionStorage.getItem('contactMessage');
+            
+            // Si hay datos almacenados, iniciar chat automáticamente
+            if (storedName && storedEmail && storedMessage) {
+                // Limpiar los datos para no volver a usarlos
+                sessionStorage.removeItem('contactName');
+                sessionStorage.removeItem('contactEmail');
+                sessionStorage.removeItem('contactMessage');
+                
+                // Esperar un momento para que la página se cargue completamente
+                setTimeout(() => {
+                    if (window.startChatFromContactForm) {
+                        window.startChatFromContactForm(storedName, storedEmail, storedMessage);
+                    }
+                }, 1000);
+            }
+        });
+    </script>
+</body>
+</html>

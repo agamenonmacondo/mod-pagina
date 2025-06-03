@@ -1,0 +1,13 @@
+{
+  "image_filename": "avances_en_inteligencia_artificial.png",
+  "article_title": "Avances en Inteligencia Artificial",
+  "article_file": "avances_en_inteligencia_artificial_20250602.json",
+  "prompt": "Here is the prompt for the image:\n\n\"Create an image that embodies the essence of the article 'Novedades en inteligencia artificial y tecnología: avances y tendencias'. The image should be visually striking, artistic, and professional, with a modern and commercial style.\n\nIncorporate the following elements: a human brain with a subtle glow to represent the concept of intelligence, surrounded by circuits and wires to symbolize the intersection of technology and artificial intelligence. In the background, include a subtle cityscape or urban landscape to represent the impact of AI on everyday life.\n\nUse a palette of blues and golds to convey a sense of innovation and progress. The brain and circuits should be rendered in a realistic and detailed style, with a focus on textures and shading to give the image depth and dimensionality.\n\nCompositing should be tight and close-up, with a focus on showcasing the intricate details of the brain and circuits. The overall mood should be futuristic and optimistic, conveying a sense of excitement and possibility.\n\nSymbolic elements to include: a subtle hint of a smartphone or other AI-enabled device in the background, to represent the integration of AI into daily life. A stylized 'A' or 'AI' logo in the upper left or right corner of the image, to add a touch of visual interest and branding. The brain should be slightly transparent or translucent to allow the circuits and cityscape to peek through, representing the blurring of boundaries between human and machine.\"",
+  "model": "FLUX.1-schnell-Free",
+  "generated_at": "2025-06-02T22:02:40.975680",
+  "keywords": [
+    "inteligencia artificial",
+    "innovación",
+    "tecnología"
+  ]
+}
