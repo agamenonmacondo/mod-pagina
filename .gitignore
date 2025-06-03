@@ -273,5 +273,37 @@ local_config.py
 development.ini
 production.ini
 
-# Email templates con información sensible
-templates/emails/private/
+# ================================
+# GOOGLE OAUTH Y SECRETOS ADICIONALES
+# ================================
+
+# Google OAuth secrets detectados por GitHub
+llmpagina/ava_bot/token.json
+llmpagina/ava_bot/client_secret.json
+
+# Otros archivos OAuth y JWT
+*/token.json
+*/client_secret.json
+**/credentials.json
+**/service-account*.json
+**/auth*.json
+
+# Tokens y certificados adicionales
+*.jwt
+*.p12
+*.pfx
+access_token.txt
+refresh_token.txt
+
+# Base de datos con datos sensibles (específicos)
+*.db
+*.sqlite
+*.sqlite3
+ava_users.db
+memories.db
+
+# Uploads y downloads que pueden contener datos sensibles
+uploads/
+downloads/
+generated_images/
+
