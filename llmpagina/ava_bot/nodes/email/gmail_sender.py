@@ -12,6 +12,17 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from google.auth.exceptions import RefreshError
 import json
+from pathlib import Path
+
+# ✅ IMPORTAR OAUTH HELPER
+sys.path.append(str(Path(__file__).parent.parent.parent / 'utils'))
+try:
+    from oauth_helper import get_google_credentials
+    OAUTH_HELPER_AVAILABLE = True
+    print("✅ OAuth helper disponible")
+except ImportError:
+    OAUTH_HELPER_AVAILABLE = False
+    print("⚠️ OAuth helper no disponible, usando método legacy")
 
 # ✅ IMPORTAR FILE MANAGER DIRECTAMENTE
 from pathlib import Path
@@ -51,10 +62,22 @@ class GmailSender:
             self.file_manager = None
     
     def _get_gmail_service(self):
-        """Get Gmail API service"""
+        """Get Gmail API service - ACTUALIZADO PARA USAR ENV VARS"""
+        
+        # ✅ NUEVO: Intentar oauth_helper primero
+        if OAUTH_HELPER_AVAILABLE:
+            try:
+                creds = get_google_credentials(['https://www.googleapis.com/auth/gmail.send'])
+                service = build('gmail', 'v1', credentials=creds)
+                logger.info("✅ Gmail API service initialized via oauth_helper (env vars)")
+                return service
+            except Exception as e:
+                logger.warning(f"⚠️ Error with oauth_helper, falling back to legacy: {e}")
+        
+        # ✅ FALLBACK: Método legacy con archivos JSON
         creds = None
         token_path = os.path.join(os.path.dirname(__file__), "../../token.json")
-        credentials_path = os.path.join(os.path.dirname(__file__), "../../credentials.json")
+        credentials_path = os.path.join(os.path.dirname(__file__), "../../client_secret.json")
         
         logger.info(f"Looking for Gmail credentials at: {token_path}")
         
@@ -63,9 +86,9 @@ class GmailSender:
             try:
                 creds = Credentials.from_authorized_user_info(
                     json.loads(open(token_path, 'r').read()), 
-                    SCOPES
+                    ['https://www.googleapis.com/auth/gmail.send']
                 )
-                logger.info("Gmail credentials loaded successfully")
+                logger.info("Gmail credentials loaded successfully from file")
             except Exception as e:
                 logger.error(f"Error loading credentials: {e}")
         
@@ -83,11 +106,11 @@ class GmailSender:
             # If still no valid creds, need to authorize
             if not creds:
                 if not os.path.exists(credentials_path):
-                    logger.error(f"Credentials file not found at: {credentials_path}")
+                    logger.error(f"❌ No credentials available. Configure environment variables or provide {credentials_path}")
                     return None
                 
                 try:
-                    flow = InstalledAppFlow.from_client_secrets_file(credentials_path, SCOPES)
+                    flow = InstalledAppFlow.from_client_secrets_file(credentials_path, ['https://www.googleapis.com/auth/gmail.send'])
                     creds = flow.run_local_server(port=0)
                     logger.info("New Gmail authorization completed successfully")
                     
@@ -102,7 +125,7 @@ class GmailSender:
         # Build and return Gmail service
         try:
             service = build('gmail', 'v1', credentials=creds)
-            logger.info("Gmail API service initialized")
+            logger.info("Gmail API service initialized via legacy method")
             return service
         except Exception as e:
             logger.error(f"Error building Gmail service: {e}")

@@ -1,0 +1,32 @@
+{
+  "title": "Novedades en Inteligencia Artificial y Tecnología",
+  "meta_description": "Descubre las últimas novedades en inteligencia artificial y tecnología, desde avances en aprendizaje automático hasta innovaciones en dispositivos electrónicos.",
+  "keywords": [
+    "inteligencia artificial",
+    "tecnología",
+    "aprendizaje automático",
+    "dispositivos electrónicos"
+  ],
+  "content": "En los últimos meses, hemos visto un gran avance en el campo de la inteligencia artificial y la tecnología. Uno de los logros más destacados es el desarrollo de un algoritmo de aprendizaje automático que puede aprender a reconocer patrones en grandes cantidades de datos sin necesidad de ser programado previamente. Esto abre la puerta a la creación de sistemas más inteligentes y eficientes en various áreas, como la medicina y la seguridad.\n\nAdemás, se han lanzado nuevos dispositivos electrónicos que incorporan tecnologías de vanguardia, como teléfonos con cámaras de realidad aumentada y relojes inteligentes que pueden monitorear el ritmo cardíaco y la actividad física. Estos dispositivos están revolucionando la forma en que vivimos y interactuamos con el mundo.\n\nOtra novedad importante es el desarrollo de un sistema de reconocimiento facial que puede identificar a las personas con una precisión del 99,9%. Esto puede ser utilizado en various aplicaciones, como la seguridad y la identificación de personas.\n\nEn resumen, los últimos avances en inteligencia artificial y tecnología están revolucionando la forma en que vivimos y interactuamos con el mundo. Estos avances pueden tener un gran impacto en various áreas y cambiar la forma en que vivimos en el futuro.",
+  "references": [
+    {
+      "title": "Algoritmo de aprendizaje automático",
+      "url": "https://www.scientificamerican.com/article/ai-algorithm-learns-to-recognize-patterns-without-being-programmed/"
+    },
+    {
+      "title": "Dispositivos electrónicos con tecnologías de vanguardia",
+      "url": "https://www.theverge.com/2022/3/15/22984431/samsung-galaxy-s22-ultra-review"
+    },
+    {
+      "title": "Sistema de reconocimiento facial",
+      "url": "https://www.engadget.com/2022/02/22/facial-recognition-ai-99-9-accuracy/"
+    }
+  ],
+  "generated_at": "2025-06-04T04:07:04.928961",
+  "source_topics_count": 2,
+  "source_topics": [
+    "Artificial intelligence for streamflow prediction in river basins: a use case in Mar Menor - Nature",
+    "Google working on AI email tool that can ‘answer in your style’ - The Guardian"
+  ],
+  "model_used": "llama3-70b-8192"
+}

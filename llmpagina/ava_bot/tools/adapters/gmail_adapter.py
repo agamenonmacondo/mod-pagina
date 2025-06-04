@@ -1,27 +1,17 @@
 from pathlib import Path
 import sys
 import os
-import base64
-import json
-from datetime import datetime
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-from email.mime.base import MIMEBase
-from email import encoders
-import mimetypes
-import logging
-from typing import Dict, Any  # ✅ AGREGAR ESTA LÍNEA
 
-# ✅ AGREGAR RUTA CORREGIDA AL INICIO
+# ✅ AGREGAR OAUTH_HELPER AL PATH
 current_dir = Path(__file__).parent
 tools_dir = current_dir.parent
 ava_bot_dir = tools_dir.parent
-project_root = ava_bot_dir.parent.parent
+utils_dir = ava_bot_dir / 'utils'
 
 # Agregar rutas necesarias
 paths_to_add = [
-    str(project_root),
     str(ava_bot_dir),
+    str(utils_dir),
     str(ava_bot_dir / 'nodes'),
     str(ava_bot_dir / 'nodes' / 'email')
 ]
@@ -30,20 +20,46 @@ for path in paths_to_add:
     if os.path.exists(path) and path not in sys.path:
         sys.path.insert(0, path)
 
-# ✅ IMPORT CORREGIDO
+# ✅ IMPORTAR OAUTH_HELPER
+try:
+    from oauth_helper import get_google_credentials
+    OAUTH_HELPER_AVAILABLE = True
+    print("✅ OAuth helper disponible para Gmail")
+except ImportError:
+    OAUTH_HELPER_AVAILABLE = False
+    print("⚠️ OAuth helper no disponible para Gmail")
+
+# ✅ IMPORT CORREGIDO CON FALLBACK
 try:
     from nodes.email.gmail_sender import GmailSender
-    
+    import base64
+    import json
+    from datetime import datetime
+    from email.mime.multipart import MIMEMultipart
+    from email.mime.text import MIMEText
+    from email.mime.base import MIMEBase
+    from email import encoders
+    import mimetypes
+    import logging
+    from typing import Dict, Any
+
     logger = logging.getLogger(__name__)
     
     class GmailAdapter:
         def __init__(self):
-            """Inicialización con soporte extendido para adjuntos"""
+            """Inicialización con soporte para OAuth desde env vars"""
             try:
-                self.gmail_sender = GmailSender()
-                self.description = "Ava Bot Gmail tool - Send emails with attachment support"
+                # ✅ CREAR GMAIL SENDER CON OAUTH HELPER
+                if OAUTH_HELPER_AVAILABLE:
+                    # Crear GmailSender que usará oauth_helper automáticamente
+                    self.gmail_sender = GmailSender()
+                else:
+                    # Método legacy
+                    self.gmail_sender = GmailSender()
+                
+                self.description = "Ava Bot Gmail tool - Send emails with OAuth env vars support"
                 self.has_credentials = True
-                logger.info("✅ GmailAdapter initialized successfully")
+                logger.info("✅ GmailAdapter initialized with OAuth env vars support")
                 
             except Exception as e:
                 logger.error(f"❌ Error initializing GmailAdapter: {e}")
@@ -52,8 +68,13 @@ try:
                 self.description = "Ava Bot Gmail tool - Basic mode"
         
         def execute(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
-            """✅ MÉTODO PRINCIPAL CON SOPORTE PARA send_latest_image"""
+            """✅ MÉTODO PRINCIPAL CON OAUTH ENV VARS"""
             try:
+                # ✅ TEST DE CONEXIÓN AL EJECUTAR
+                if not hasattr(self, '_connection_tested'):
+                    self._test_oauth_connection()
+                    self._connection_tested = True
+                
                 action = arguments.get('action', 'send')
                 
                 if action == 'send':
@@ -67,20 +88,13 @@ try:
                     attachment_data = arguments.get('attachment_data')
                     
                     if send_latest_image:
-                        # ✅ USAR MÉTODO INTEGRADO PARA ÚLTIMA IMAGEN
                         return self._send_with_latest_image_integration(to, subject, body)
-                    
                     elif image_filename:
-                        # ✅ IMAGEN ESPECÍFICA
                         directory = arguments.get('directory', 'generated_images')
                         return self._send_with_specific_image(to, subject, body, image_filename, directory)
-                    
                     elif attachment_data:
-                        # ✅ MÉTODO TRADICIONAL
                         return self._send_email_with_attachments(to, subject, body, attachment_data)
-                    
                     else:
-                        # ✅ EMAIL SIMPLE
                         return self._send_email_simple(to, subject, body)
                 
                 else:
@@ -92,6 +106,29 @@ try:
                 return {
                     "content": [{"type": "text", "text": f"❌ Error en Gmail: {str(e)}"}]
                 }
+
+        def _test_oauth_connection(self):
+            """Test de conexión OAuth desde variables de entorno"""
+            print(f"\n🧪 GMAIL OAUTH CONNECTION TEST")
+            print(f"=" * 40)
+            
+            if OAUTH_HELPER_AVAILABLE:
+                try:
+                    # Test de credenciales OAuth
+                    creds = get_google_credentials(['https://www.googleapis.com/auth/gmail.send'])
+                    if creds:
+                        print(f"✅ OAuth desde env vars: EXITOSO")
+                        print(f"🔑 Token válido: {not creds.expired}")
+                        print(f"🔄 Puede refrescar: {bool(creds.refresh_token)}")
+                    else:
+                        print(f"❌ OAuth desde env vars: FALLÓ")
+                except Exception as e:
+                    print(f"⚠️ OAuth desde env vars: ERROR - {e}")
+            else:
+                print(f"⚠️ OAuth helper no disponible")
+            
+            print(f"🔧 Gmail sender: {'✅ Activo' if self.gmail_sender else '❌ No disponible'}")
+            print(f"=" * 40)
 
         def _send_with_latest_image_integration(self, to: str, subject: str, body: str) -> Dict[str, Any]:
             """✅ ENVIAR CON ÚLTIMA IMAGEN USANDO INTEGRACIÓN DIRECTA"""

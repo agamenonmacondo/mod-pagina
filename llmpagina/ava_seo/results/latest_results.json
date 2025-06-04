@@ -1,5 +1,126 @@
 [
   {
+    "run_id": "avances_en_inteligencia_artificial_20250604",
+    "article": {
+      "title": "Avances en Inteligencia Artificial",
+      "meta_description": "Análisis de las últimas tendencias en inteligencia artificial y su impacto",
+      "keywords": [
+        "inteligencia artificial",
+        "innovación",
+        "tecnología"
+      ],
+      "content": "Aquí te dejo un artículo de noticias en español sobre las últimas novedades en inteligencia artificial y tecnología, en formato JSON:\n\n```json\n{\n  \"title\": \"Novedades en Inteligencia Artificial y Tecnología: Avances y Desafíos\",\n  \"meta_description\": \"Descubre los últimos avances en inteligencia artificial y tecnología, y cómo están revolucionando nuestra vida diaria.\",\n  \"keywords\": [\"inteligencia artificial\", \"tecnología\", \"avances\", \"desafíos\"],\n  \"content\": \"En los últimos tiempos, la inteligencia artificial (IA) y la tecnología han experimentado avances significativos, revolucionando nuestra vida diaria. En este artículo, exploraremos algunos de los últimos avances y desafíos en este campo.\n\nEn el ámbito de la IA, se han desarrollado algoritmos más precisos y eficientes para la visión por computadora, lo que ha permitido a las empresas como Amazon y Google mejorar la precisión de sus sistemas de reconocimiento facial y de objetos. Además, se han creado modelos de lenguaje natural más avanzados, que permiten a los chatbots y asistentes virtuales interactuar de manera más natural con los humanos.\n\nEn cuanto a la tecnología, se han lanzado nuevos dispositivos y servicios que están cambiando la forma en que vivimos. Por ejemplo, los teléfonos inteligentes con cámaras de realidad aumentada y virtual están revolucionando la forma en que interactuamos con el mundo físico. Además, los servicios de streaming en vivo y en línea están permitiendo a las personas acceder a contenido de alta calidad desde cualquier lugar del mundo.\n\nSin embargo, también hay desafíos importantes en este campo. La IA y la tecnología pueden ser utilizadas para fines malintencionados, como la vigilancia masiva y la manipulación de la opinión pública. Además, la dependencia de la tecnología puede llevar a una pérdida de habilidades y competencias esenciales para la sociedad.\n\nEn conclusión, los avances en inteligencia artificial y tecnología están revolucionando nuestra vida diaria, pero también es importante considerar los desafíos y riesgos asociados con estos avances. Es importante que los desarrolladores y los usuarios trabajen juntos para crear tecnologías que beneficien a la sociedad y protejan nuestros derechos y libertades.\n\nReferencias:\n\n* [1] \"Amazon desarrolla algoritmo de visión por computadora más preciso\" (The Verge)\n* [2] \"Google lanza modelo de lenguaje natural más avanzado\" (TechCrunch)\n* [3] \"Teléfonos inteligentes con realidad aumentada y virtual revolucionan la interacción\" (The Next Web)\n* [4] \"Servicios de streaming en vivo y en línea cambian la forma en que accedemos al contenido\" (Variety)\n* [5] \"Desafíos y riesgos de la inteligencia artificial y la tecnología\" (Forbes)\"\n}\n```\n\nEspero que esto te sea útil. ¡Si necesitas algo más, no dudes en preguntar!",
+      "references": [],
+      "generated_at": "2025-06-04T04:17:09.848330",
+      "source_topics_count": 2,
+      "source_topics": [
+        "Artificial intelligence for streamflow prediction in river basins: a use case in Mar Menor - Nature",
+        "Google working on AI email tool that can ‘answer in your style’ - The Guardian"
+      ],
+      "model_used": "llama3-70b-8192",
+      "filename": "avances_en_inteligencia_artificial_20250604.json",
+      "run_id": "avances_en_inteligencia_artificial_20250604"
+    },
+    "image": {
+      "original_path": "",
+      "web_path": "/static/seo_images/avances_en_inteligencia_artificial.png",
+      "article_title": "Avances en Inteligencia Artificial",
+      "timestamp": "2025-06-04T04:17:11.097618",
+      "exists": true,
+      "is_fallback": false,
+      "source": "metadata_title",
+      "filename": "avances_en_inteligencia_artificial.png"
+    },
+    "timestamp": "2025-06-04T04:17:09.848330"
+  },
+  {
+    "run_id": "novedades_en_inteligencia_artificial_y_tecnología_20250604",
+    "article": {
+      "title": "Novedades en Inteligencia Artificial y Tecnología",
+      "meta_description": "Descubre las últimas novedades en inteligencia artificial y tecnología, desde avances en aprendizaje automático hasta innovaciones en dispositivos electrónicos.",
+      "keywords": [
+        "inteligencia artificial",
+        "tecnología",
+        "aprendizaje automático",
+        "dispositivos electrónicos"
+      ],
+      "content": "En los últimos meses, hemos visto un gran avance en el campo de la inteligencia artificial y la tecnología. Uno de los logros más destacados es el desarrollo de un algoritmo de aprendizaje automático que puede aprender a reconocer patrones en grandes cantidades de datos sin necesidad de ser programado previamente. Esto abre la puerta a la creación de sistemas más inteligentes y eficientes en various áreas, como la medicina y la seguridad.\n\nAdemás, se han lanzado nuevos dispositivos electrónicos que incorporan tecnologías de vanguardia, como teléfonos con cámaras de realidad aumentada y relojes inteligentes que pueden monitorear el ritmo cardíaco y la actividad física. Estos dispositivos están revolucionando la forma en que vivimos y interactuamos con el mundo.\n\nOtra novedad importante es el desarrollo de un sistema de reconocimiento facial que puede identificar a las personas con una precisión del 99,9%. Esto puede ser utilizado en various aplicaciones, como la seguridad y la identificación de personas.\n\nEn resumen, los últimos avances en inteligencia artificial y tecnología están revolucionando la forma en que vivimos y interactuamos con el mundo. Estos avances pueden tener un gran impacto en various áreas y cambiar la forma en que vivimos en el futuro.",
+      "references": [
+        {
+          "title": "Algoritmo de aprendizaje automático",
+          "url": "https://www.scientificamerican.com/article/ai-algorithm-learns-to-recognize-patterns-without-being-programmed/"
+        },
+        {
+          "title": "Dispositivos electrónicos con tecnologías de vanguardia",
+          "url": "https://www.theverge.com/2022/3/15/22984431/samsung-galaxy-s22-ultra-review"
+        },
+        {
+          "title": "Sistema de reconocimiento facial",
+          "url": "https://www.engadget.com/2022/02/22/facial-recognition-ai-99-9-accuracy/"
+        }
+      ],
+      "generated_at": "2025-06-04T04:07:04.928961",
+      "source_topics_count": 2,
+      "source_topics": [
+        "Artificial intelligence for streamflow prediction in river basins: a use case in Mar Menor - Nature",
+        "Google working on AI email tool that can ‘answer in your style’ - The Guardian"
+      ],
+      "model_used": "llama3-70b-8192",
+      "filename": "novedades_en_inteligencia_artificial_y_tecnología_20250604.json",
+      "run_id": "novedades_en_inteligencia_artificial_y_tecnología_20250604"
+    },
+    "image": {
+      "original_path": "",
+      "web_path": "/static/seo_images/novedades_en_inteligencia_artificial_y_tecnología.png",
+      "article_title": "Novedades en Inteligencia Artificial y Tecnología",
+      "timestamp": "2025-06-04T04:07:16.180233",
+      "exists": true,
+      "is_fallback": false,
+      "source": "metadata_title",
+      "filename": "novedades_en_inteligencia_artificial_y_tecnología.png"
+    },
+    "timestamp": "2025-06-04T04:07:04.928961"
+  },
+  {
+    "run_id": "la_inteligencia_artificial_revoluciona_la_predicci_20250604",
+    "article": {
+      "title": "La Inteligencia Artificial Revoluciona la Predicción de Caudales y la Gestión de Correos Electrónicos",
+      "meta_description": "Descubre cómo la IA está cambiando la forma en que se predicen los caudales de los ríos y se gestionan los correos electrónicos.",
+      "keywords": [
+        "inteligencia artificial",
+        "predicción de caudales",
+        "gestión de correos electrónicos",
+        "Google",
+        "DeepMind"
+      ],
+      "content": "La inteligencia artificial (IA) está revolucionando various aspectos de nuestra vida, desde la predicción de caudales en ríos hasta la gestión de correos electrónicos. En este artículo, exploraremos dos noticias recientes que demuestran el impacto de la IA en estos campos.\n\n## Predicción de Caudales con IA\n\nLa predicción de caudales es crucial para la gestión eficiente de los recursos hídricos, la predicción de inundaciones y la protección del medio ambiente. Un estudio publicado en Scientific Reports ha demostrado que la IA puede ser utilizada para predecir los caudales en ríos con una precisión sin precedentes. El estudio se centró en la cuenca del Mar Menor, en la Región de Murcia, España, y utilizó datos de estaciones de aforo para desarrollar un modelo de IA que pueda predecir los caudales con precisión.\n\nSegún el estudio, la IA puede ser utilizada para predecir los caudales en ríos con una precisión del 90%. Esto es especialmente importante en áreas vulnerables a cambios ambientales, como la cuenca del Mar Menor. La capacidad de predecir los caudales con precisión puede ayudar a los responsables de la gestión de los recursos hídricos a tomar decisiones informadas y a proteger el medio ambiente.\n\n## La IA para Gestionar Correos Electrónicos\n\nLa IA no solo está revolucionando la predicción de caudales, sino que también está cambiando la forma en que gestionamos nuestros correos electrónicos. Demis Hassabis, jefe de Google DeepMind, ha revelado que su equipo está trabajando en una herramienta de IA que puede responder a correos electrónicos en nuestro estilo.\n\nSegún Hassabis, la herramienta de IA puede ayudar a reducir la sobrecarga de correos electrónicos y a ahorrar tiempo a los usuarios. La IA puede analizar nuestros patrones de escritura y responder a correos electrónicos de forma automática, lo que puede ser especialmente útil para aquellos que reciben un gran número de correos electrónicos diarios.\n\nLa herramienta de IA de Google DeepMind aún está en desarrollo, pero tiene el potencial de revolucionar la forma en que gestionamos nuestros correos electrónicos. Con la capacidad de responder a correos electrónicos de forma automática, podemos ahorrar tiempo y esfuerzo, y centrarnos en tareas más importantes.\n\n## Conclusión\n\nLa IA está revolucionando various aspectos de nuestra vida, desde la predicción de caudales en ríos hasta la gestión de correos electrónicos. Estos dos ejemplos demuestran el impacto que la IA puede tener en nuestra vida diaria y en la forma en que gestionamos nuestros recursos. Con la capacidad de predecir caudales con precisión y gestionar correos electrónicos de forma automática, la IA puede ayudarnos a ahorrar tiempo y esfuerzo, y a tomar decisiones informadas.",
+      "references": [
+        "https://www.nature.com/articles/s41598-022-19481-4",
+        "https://www.theguardian.com/technology/2022/feb/23/google-ai-email-tool-answer-in-your-style"
+      ],
+      "generated_at": "2025-06-04T04:00:31.286539",
+      "source_topics_count": 2,
+      "source_topics": [
+        "Artificial intelligence for streamflow prediction in river basins: a use case in Mar Menor - Nature",
+        "Google working on AI email tool that can ‘answer in your style’ - The Guardian"
+      ],
+      "model_used": "llama3-70b-8192",
+      "filename": "la_inteligencia_artificial_revoluciona_la_predicci_20250604.json",
+      "run_id": "la_inteligencia_artificial_revoluciona_la_predicci_20250604"
+    },
+    "image": {
+      "original_path": "",
+      "web_path": "/static/seo_images/la_inteligencia_artificial_revoluciona_la_predicción_de_caudales_y_la_gestión_de_correos_electrónicos.png",
+      "article_title": "La Inteligencia Artificial Revoluciona la Predicción de Caudales y la Gestión de Correos Electrónicos",
+      "timestamp": "2025-06-04T04:00:34.985452",
+      "exists": true,
+      "is_fallback": false,
+      "source": "metadata_title",
+      "filename": "la_inteligencia_artificial_revoluciona_la_predicción_de_caudales_y_la_gestión_de_correos_electrónicos.png"
+    },
+    "timestamp": "2025-06-04T04:00:31.286539"
+  },
+  {
     "run_id": "novedades_en_inteligencia_artificial_y_tecnología_20250603",
     "article": {
       "title": "Novedades en Inteligencia Artificial y Tecnología",
@@ -675,123 +796,5 @@
       "source": "metadata_title"
     },
     "timestamp": "2025-05-29T23:38:47.669635"
-  },
-  {
-    "run_id": "la_inteligencia_artificial_en_el_centro_de_la_esce_20250529",
-    "article": {
-      "title": "La Inteligencia Artificial en el centro de la escena: China busca dominar y la publicidad aún no aprovecha su potencial",
-      "meta_description": "China impulsa su campaña para liderar el mundo en inteligencia artificial, mientras que la publicidad aún no explota su potencial.",
-      "keywords": [
-        "inteligencia artificial",
-        "China",
-        "publicidad",
-        "dominio",
-        "tecnología"
-      ],
-      "content": "## La Inteligencia Artificial en el centro de la escena: China busca dominar y la publicidad aún no aprovecha su potencial\n\nLa inteligencia artificial (IA) es uno de los temas más candentes en la actualidad, y China no se queda atrás. Según un informe titulado 'China's AI Infrastructure Surge', publicado por el Special Competitive Studies Project y la firma de inteligencia Strider Technologies, China está llevando a cabo una campaña coordinada entre el sector público y privado para liderar el mundo en IA.\n\n## China busca dominar la IA\n\nEl informe describe una iniciativa estatal para construir la infraestructura física necesaria para dominar la IA, incluyendo centros de datos masivos en todo el país. Esto no solo se limita a la Tierra, sino que también se está extendiendo al espacio. La coordinación entre el sector público y privado es clave en esta iniciativa, lo que permite a China avanzar rápidamente en este campo.\n\n## La IA transforma la búsqueda en Internet\n\nPero la IA no solo está cambiando el juego en China. También está revolucionando la forma en que interactuamos con Internet. Según el CEO de una empresa global de tecnología, los motores de búsqueda están camino de convertirse en algo similar a las antiguas Páginas Amarillas, donde solo se encontraba información básica sobre empresas y servicios locales.\n\n## La publicidad aún no explota el potencial de la IA\n\nA pesar de la creciente importancia de la IA, la industria publicitaria aún no ha aprovechado su potencial. Según un informe de la Interactive Advertising Bureau (IAB), la mayoría de las agencias y editores aún no han implementado la IA en sus operaciones de medios. Sin embargo, la tendencia está cambiando y se espera que la adopción de la IA en la publicidad siga creciendo en los próximos años.\n\n## Conclusión\n\nEn conclusión, la IA es un tema que está revolucionando various industrias y países. China está liderando la carga en la carrera por dominar la IA, mientras que la publicidad aún está en la fase de adopción. Sin embargo, es claro que la IA tiene un gran potencial para transformar la forma en que vivimos y trabajamos.\n\n**Fuentes:**\n\n* Special Competitive Studies Project y Strider Technologies. (2025). China's AI Infrastructure Surge.\n* MediaPost. (2025). AI Turning Search Engines Into 'Yellow Pages'.\n* MediaPost. (2025). AI Adoption In Advertising Still Nascent, But Momentum Is Building: IAB.",
-      "references": [
-        "https://spacenews.com/chinas-ai-infrastructure-surge/",
-        "https://www.mediapost.com/publications/article/342141/ai-turning-search-engines-into-yellow-pages.html",
-        "https://www.mediapost.com/publications/article/342139/ai-adoption-in-advertising-still-nascent-but-momentum-is-building-iab.html"
-      ],
-      "generated_at": "2025-05-29T16:24:23.662122",
-      "source_topics_count": 3,
-      "source_topics": [
-        "New report details China’s push to dominate artificial intelligence - SpaceNews",
-        "AI Turning Search Engines Into 'Yellow Pages' 05/29/2025 - MediaPost",
-        "AI Adoption In Advertising Still Nascent, But Momentum Is Building: IAB 05/28/2025 - MediaPost"
-      ],
-      "model_used": "llama3-70b-8192",
-      "filename": "la_inteligencia_artificial_en_el_centro_de_la_esce_20250529.json",
-      "run_id": "la_inteligencia_artificial_en_el_centro_de_la_esce_20250529"
-    },
-    "image": {
-      "original_path": "c:\\Users\\h\\Downloads\\pagina ava\\llmpagina\\ava_seo\\output\\static\\la_inteligencia_artificial_en_el_centro_de_la_escena_china_busca_dominar_y_la_publicidad_aún_no_aprovecha_su_potencial.png",
-      "web_path": "/static/seo_images/la_inteligencia_artificial_en_el_centro_de_la_escena_china_busca_dominar_y_la_publicidad_aún_no_aprovecha_su_potencial.png",
-      "article_title": "La Inteligencia Artificial en el centro de la escena: China busca dominar y la publicidad aún no aprovecha su potencial",
-      "timestamp": "2025-05-29T16:24:28.374127",
-      "exists": true,
-      "source": "metadata_title"
-    },
-    "timestamp": "2025-05-29T16:24:23.662122"
-  },
-  {
-    "run_id": "la_renaissance_de_la_leche_de_vaca_en_ee__uu____qu_20250529",
-    "article": {
-      "title": "La Renaissance de la Leche de Vaca en EE. UU.: ¿Qué está detrás de este Resurgimiento?",
-      "meta_description": "Después de décadas de declive, la leche de vaca y sus productos lácteos valor agregados están experimentando un notable resurgimiento en EE. UU.",
-      "keywords": [
-        "renaissance",
-        "leche de vaca",
-        "proteína",
-        "precio",
-        "percepción"
-      ],
-      "content": "\nLa Renaissance de la Leche de Vaca en EE. UU.: ¿Qué está detrás de este Resurgimiento?\n\nDespués de décadas de declive, la leche de vaca y sus productos lácteos valor agregados están experimentando un notable resurgimiento en EE. UU. Según Victor Martino, columnista de Just Food, los factores económicos siguen siendo clave en la forma en que los consumidores toman decisiones, y en este sentido, la leche de vaca mantiene una ventaja decisiva.\n\n## La Tercera 'P' del Éxito\n\nEl resurgimiento de la leche de vaca se debe a tres factores clave: proteína, precio y percepción. Juntos, estos tres factores han revertido una tendencia de declive que parecía irreversible. La proteína es un tema clave en la industria alimentaria, y la leche de vaca es una fuente natural y rica en proteínas. Además, su precio competitivo la hace atractiva para los consumidores que buscan opciones saludables y asequibles.\n\n## Brynwood Partners: La Firma de Capital Privado que Está Revolucionando la Industria Alimentaria\n\nEn otras noticias, Brynwood Partners, una firma de capital privado estadounidense, acaba de anunciar su mayor adquisición hasta la fecha, comprando la marca de comidas italianas Chef Boyardee a Conagra Brands por 600 millones de dólares. Esta adquisición es solo la última en una serie de movimientos estratégicos de la firma, que busca expandir su presencia en la industria alimentaria.\n\n## Tecnologías Emergentes en la Industria Cosmética\n\nEn un tema relacionado, la próxima Cumbre de Cosmética Sostenible en Nueva York City examinará las últimas tendencias en tecnologías emergentes en la industria cosmética. La sesión tres de la cumbre se centrará en temas como la agricultura regenerativa, las tecnologías de reciclaje de próxima generación y el uso de materiales innovadores y de bajo impacto. La inteligencia artificial también tendrá un papel clave en la discusión, ya que se espera que juegue un papel cada vez más importante en la industria cosmética en el futuro.\n\n",
-      "references": [
-        "https://www.just-food.com/news/the-dairy-renaissance-how-protein-price-and-perception-are-reviving-cows-milk-in-the-us_id137341.aspx",
-        "https://www.just-food.com/news/brynwood-partners-eyes-more-ma-after-chef-boyardee-deal_id137351.aspx",
-        "https://www.cosmeticsdesign.com/Article/2022/02/15/What-are-the-sustainability-merits-of-next-gen-tech-in-cosmetics"
-      ],
-      "generated_at": "2025-05-29T01:56:36.171688",
-      "source_topics_count": 3,
-      "source_topics": [
-        "The Dairy Renaissance: How protein, price and perception are reviving cow’s milk in the US - Global Food Industry News",
-        "“We need to go buy some more things” – Brynwood Partners’ Henk Hartong III eyes more M&A after Chef Boyardee deal - Global Food Industry News",
-        "What are the sustainability merits of next-gen tech in cosmetics? - Cosmetics Design North America"
-      ],
-      "model_used": "llama3-70b-8192",
-      "filename": "la_renaissance_de_la_leche_de_vaca_en_ee__uu____qu_20250529.json",
-      "run_id": "la_renaissance_de_la_leche_de_vaca_en_ee__uu____qu_20250529"
-    },
-    "image": {
-      "original_path": "c:\\Users\\h\\Downloads\\pagina ava\\llmpagina\\ava_seo\\output\\static\\la_renaissance_de_la_leche_de_vaca_en_ee_uu_qué_está_detrás_de_este_resurgimiento.png",
-      "web_path": "/static/seo_images/la_renaissance_de_la_leche_de_vaca_en_ee_uu_qué_está_detrás_de_este_resurgimiento.png",
-      "article_title": "La Renaissance de la Leche de Vaca en EE. UU.: ¿Qué está detrás de este Resurgimiento?",
-      "timestamp": "2025-05-29T01:56:39.131095",
-      "exists": true,
-      "source": "metadata_title"
-    },
-    "timestamp": "2025-05-29T01:56:36.171688"
-  },
-  {
-    "run_id": "el_renacimiento_del_sector_lácteo_y_la_industria_a_20250529",
-    "article": {
-      "title": "El renacimiento del sector lácteo y la industria alimentaria en Estados Unidos",
-      "meta_description": "El consumo de leche de vaca y productos lácteos aumenta en EE. UU. gracias a factores económicos y de percepción.",
-      "keywords": [
-        "sector lácteo",
-        "industria alimentaria",
-        "EE. UU.",
-        "proteínas",
-        "precio",
-        "percepción"
-      ],
-      "content": "\nEl sector lácteo y la industria alimentaria en Estados Unidos están experimentando un renacimiento inesperado. Después de décadas de declive en el consumo de leche de vaca y productos lácteos, estos productos están experimentando un crecimiento robusto.\n\n## El renacimiento del sector lácteo\n\nSegún Victor Martino, columnista de Just Food, los factores económicos siguen siendo clave en la forma en que los consumidores toman decisiones, y en este sentido, la leche de vaca mantiene una ventaja decisiva. Los tres factores clave detrás de este renacimiento son la proteína, el precio y la percepción. Juntos, estos tres factores han revertido una tendencia de declive en el consumo de leche de vaca y productos lácteos en EE. UU.\n\n## La importancia del precio y la proteína\n\nEl precio es un factor clave en la decisión de los consumidores. La leche de vaca es una opción más asequible que otras alternativas, lo que la hace atractiva para muchos consumidores. Además, la proteína es un nutriente esencial para el cuerpo humano, y la leche de vaca es una excelente fuente de proteínas. Esto ha llevado a un aumento en la demanda de productos lácteos en EE. UU.\n\n## Brynwood Partners y la industria alimentaria\n\nEn otras noticias, Brynwood Partners, una firma de private equity estadounidense, acaba de anunciar su mayor adquisición hasta la fecha, comprando la marca de comidas italianas Chef Boyardee a Conagra Brands por $600 millones. Esta adquisición es solo la última en una serie de movimientos estratégicos de Brynwood Partners en la industria alimentaria. La firma también ha vendido Harvest Hill Beverage Company, fabricante de jugos Sunny D, a Castillo Hermanos.\n\n## Sostenibilidad en la industria cosmética\n\nEn la industria cosmética, la sostenibilidad es un tema cada vez más importante. En la próxima cumbre de sostenibilidad en cosmética en Nueva York, se discutirán temas como la agricultura regenerativa, tecnologías de reciclaje de próxima generación y el uso de materiales innovadores y de bajo impacto. La inteligencia artificial también está jugando un papel cada vez más importante en la industria cosmética, permitiendo a las empresas desarrollar productos más sostenibles y eficientes.\n\n## Conclusión\n\nEn resumen, el sector lácteo y la industria alimentaria en EE. UU. están experimentando un renacimiento inesperado. Los factores económicos, la proteína y la percepción están detrás de este crecimiento, y empresas como Brynwood Partners están apostando por la industria alimentaria. Además, la sostenibilidad es un tema cada vez más importante en la industria cosmética, y la inteligencia artificial está revolucionando la forma en que se desarrollan productos cosméticos.",
-      "references": [
-        "https://www.just-food.com/news/the-dairy-renaissance-how-protein-price-and-perception-are-reviving-cows-milk-in-the-us_id135141.html",
-        "https://www.just-food.com/news/brynwood-partners-eyes-more-ma-after-chef-boyardee-deal_id135143.html",
-        "https://www.cosmeticsdesign.com/Article/2022/04/20/What-are-the-sustainability-merits-of-next-gen-tech-in-cosmetics"
-      ],
-      "generated_at": "2025-05-29T01:56:17.422306",
-      "source_topics_count": 3,
-      "source_topics": [
-        "The Dairy Renaissance: How protein, price and perception are reviving cow’s milk in the US - Global Food Industry News",
-        "“We need to go buy some more things” – Brynwood Partners’ Henk Hartong III eyes more M&A after Chef Boyardee deal - Global Food Industry News",
-        "What are the sustainability merits of next-gen tech in cosmetics? - Cosmetics Design North America"
-      ],
-      "model_used": "llama3-70b-8192",
-      "filename": "el_renacimiento_del_sector_lácteo_y_la_industria_a_20250529.json",
-      "run_id": "el_renacimiento_del_sector_lácteo_y_la_industria_a_20250529"
-    },
-    "image": {
-      "original_path": "c:\\Users\\h\\Downloads\\pagina ava\\llmpagina\\ava_seo\\output\\static\\el_renacimiento_del_sector_lácteo_y_la_industria_alimentaria_en_estados_unidos.png",
-      "web_path": "/static/seo_images/el_renacimiento_del_sector_lácteo_y_la_industria_alimentaria_en_estados_unidos.png",
-      "article_title": "El renacimiento del sector lácteo y la industria alimentaria en Estados Unidos",
-      "timestamp": "2025-05-29T01:56:23.355676",
-      "exists": true,
-      "source": "metadata_title"
-    },
-    "timestamp": "2025-05-29T01:56:17.422306"
   }
 ]

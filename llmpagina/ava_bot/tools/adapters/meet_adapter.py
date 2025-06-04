@@ -9,63 +9,187 @@ from typing import Dict, Any, List, Optional
 
 logger = logging.getLogger(__name__)
 
+# ✅ AGREGAR OAUTH_HELPER AL PATH
+current_dir = Path(__file__).parent
+tools_dir = current_dir.parent
+ava_bot_dir = tools_dir.parent
+utils_dir = ava_bot_dir / 'utils'
+
+if str(utils_dir) not in sys.path:
+    sys.path.insert(0, str(utils_dir))
+
+# ✅ IMPORTAR OAUTH_HELPER
+try:
+    from oauth_helper import get_google_credentials
+    OAUTH_HELPER_AVAILABLE = True
+    print("✅ OAuth helper disponible para Meet")
+except ImportError:
+    OAUTH_HELPER_AVAILABLE = False
+    print("⚠️ OAuth helper no disponible para Meet")
+
 class MeetAdapter:
-    """Adaptador para Google Meet - Enlaces Reales de Google Meet"""
+    """Adaptador para Google Meet con OAuth env vars"""
     
     name = "meet"
-    description = "Create Google Meet meetings with real links"
+    description = "Create Google Meet meetings with OAuth env vars support"
     
     def __init__(self):
-        """Inicialización con enlaces reales de Google Meet"""
+        """Inicialización con OAuth desde variables de entorno"""
         try:
-            self.description = "Ava Bot meet tool - Create Google Meet meetings with real links"
-            logger.info("🔍 Inicializando MeetAdapter...")
+            self.description = "Ava Bot meet tool - OAuth env vars support"
             
-            # ✅ RUTA CORREGIDA PARA ENCONTRAR TOKEN.JSON
-            current_dir = Path(__file__).parent           # .../tools/adapters/
-            tools_dir = current_dir.parent                # .../tools/
-            ava_bot_dir = tools_dir.parent                # .../ava_bot/
-            token_path = ava_bot_dir / 'token.json'       # .../ava_bot/token.json
-            
-            logger.info(f"🔍 Buscando token en: {token_path}")
-            
-            # ✅ CARGAR MEET MANAGER REAL
+            # ✅ INTENTAR OAUTH HELPER PRIMERO
             self.meet_manager = None
             self.has_credentials = False
             
-            if token_path.exists():
-                logger.info(f"✅ Token encontrado: {token_path}")
-                self.token_path = str(token_path)
-                
-                # ✅ CREAR MEET MANAGER SIMPLIFICADO SIN DEPENDENCIAS
+            if OAUTH_HELPER_AVAILABLE:
                 try:
-                    self._initialize_meet_manager(str(token_path))
-                    logger.info("✅ MeetManager REAL inicializado - enlaces Meet disponibles")
-                    print("✅ MeetManager cargado - enlaces Google Meet reales disponibles")
-                    
+                    # Test de credenciales OAuth desde env vars
+                    creds = get_google_credentials(['https://www.googleapis.com/auth/calendar'])
+                    if creds:
+                        self._initialize_meet_with_oauth(creds)
+                        logger.info("✅ MeetManager inicializado con OAuth env vars")
+                        print("✅ MeetManager cargado - OAuth desde variables de entorno")
+                    else:
+                        logger.warning("⚠️ OAuth env vars no disponibles")
                 except Exception as e:
-                    logger.error(f"❌ Error inicializando MeetManager: {e}")
-                    print(f"⚠️ MeetManager no disponible: {e}")
-                    self.has_credentials = False
-                    self.meet_manager = None
-            else:
-                logger.info(f"ℹ️ Token no encontrado en {token_path}, usando modo básico")
-                print(f"⚠️ Token no encontrado - modo básico")
-                self.has_credentials = False
-                self.token_path = None
-                self.meet_manager = None
+                    logger.error(f"❌ Error con OAuth env vars: {e}")
             
-            logger.info("✅ MeetAdapter inicializado correctamente")
+            # ✅ FALLBACK: Método legacy
+            if not self.has_credentials:
+                logger.info("🔄 Intentando método legacy...")
+                self._initialize_meet_legacy()
+            
+            logger.info("✅ MeetAdapter inicializado")
             
         except Exception as e:
             logger.error(f"❌ Error inicializando MeetAdapter: {e}")
-            print(f"❌ Error en MeetAdapter: {e}")
-            # NO fallar - continuar en modo básico
             self.has_credentials = False
-            self.token_path = None
             self.meet_manager = None
-            self.description = "Ava Bot meet tool - Basic mode"
     
+    def _initialize_meet_with_oauth(self, creds):
+        """Inicializar MeetManager con OAuth"""
+        try:
+            from googleapiclient.discovery import build
+            
+            class OAuthMeetManager:
+                """MeetManager usando OAuth desde env vars"""
+                
+                def __init__(self, credentials):
+                    self.service = build('calendar', 'v3', credentials=credentials)
+                
+                def create_meet_event(self, summary: str, start_time: str, duration_hours: float = 1.0, 
+                                    attendees: List[str] = None, description: str = "", 
+                                    timezone: str = 'America/Bogota') -> Dict[str, Any]:
+                    """Crear evento con Google Meet usando OAuth"""
+                    
+                    # Procesar fecha y hora
+                    if isinstance(start_time, str):
+                        if 'T' in start_time:
+                            start_dt = datetime.fromisoformat(start_time.replace('Z', '+00:00'))
+                        else:
+                            start_dt = datetime.fromisoformat(f"{start_time}T00:00:00")
+                    else:
+                        start_dt = start_time
+                    
+                    end_dt = start_dt + timedelta(hours=duration_hours)
+                    
+                    # Procesar asistentes
+                    event_attendees = []
+                    if attendees:
+                        for email in attendees:
+                            if email and '@' in email:
+                                event_attendees.append({'email': email.strip()})
+                    
+                    # Crear evento con Google Meet
+                    event_body = {
+                        'summary': summary,
+                        'description': description or f"Reunión creada por AVA - OAuth\n\nTítulo: {summary}",
+                        'start': {
+                            'dateTime': start_dt.isoformat(),
+                            'timeZone': timezone,
+                        },
+                        'end': {
+                            'dateTime': end_dt.isoformat(),
+                            'timeZone': timezone,
+                        },
+                        'attendees': event_attendees,
+                        'conferenceData': {
+                            'createRequest': {
+                                'requestId': f'ava-oauth-meet-{uuid.uuid4()}',
+                                'conferenceSolutionKey': {
+                                    'type': 'hangoutsMeet'
+                                }
+                            }
+                        },
+                        'reminders': {
+                            'useDefault': False,
+                            'overrides': [
+                                {'method': 'email', 'minutes': 24 * 60},
+                                {'method': 'popup', 'minutes': 10},
+                            ],
+                        }
+                    }
+                    
+                    print(f"🔄 Creando evento Meet OAuth: {summary}")
+                    
+                    # Crear evento en Google Calendar con Meet
+                    created_event = self.service.events().insert(
+                        calendarId='primary',
+                        body=event_body,
+                        conferenceDataVersion=1
+                    ).execute()
+                    
+                    # Extraer enlace de Meet
+                    meet_link = None
+                    if created_event.get('conferenceData'):
+                        conf_data = created_event['conferenceData']
+                        
+                        if conf_data.get('entryPoints'):
+                            for entry_point in conf_data['entryPoints']:
+                                if entry_point.get('entryPointType') == 'video':
+                                    meet_link = entry_point.get('uri')
+                                    break
+                        
+                        if not meet_link and conf_data.get('conferenceId'):
+                            conf_id = conf_data['conferenceId']
+                            meet_link = f"https://meet.google.com/{conf_id}"
+                    
+                    event_link = created_event.get('htmlLink', 'No disponible')
+                    event_id = created_event.get('id', 'No disponible')
+                    
+                    print(f"✅ Meet OAuth creado: {meet_link}")
+                    
+                    return {
+                        'meet_link': meet_link,
+                        'event_link': event_link,
+                        'event_id': event_id,
+                        'status': 'success',
+                        'error': None
+                    }
+            
+            self.meet_manager = OAuthMeetManager(creds)
+            self.has_credentials = True
+            
+        except Exception as e:
+            logger.error(f"Error inicializando OAuthMeetManager: {e}")
+            raise
+    
+    def _initialize_meet_legacy(self):
+        """Método legacy con archivos"""
+        token_path = ava_bot_dir / 'token.json'
+        
+        if token_path.exists():
+            try:
+                self._initialize_meet_manager(str(token_path))
+                logger.info("✅ MeetManager legacy inicializado")
+            except Exception as e:
+                logger.error(f"❌ Error con método legacy: {e}")
+                self.has_credentials = False
+        else:
+            logger.info("ℹ️ Token no encontrado - modo básico")
+            self.has_credentials = False
+
     def _initialize_meet_manager(self, token_path: str):
         """Inicializa el manager de Google Meet sin dependencias externas"""
         try:
@@ -458,20 +582,17 @@ class MeetAdapter:
             }
     
     def _run_self_test(self):
-        """Auto-test del adapter para verificar funcionamiento"""
+        """Auto-test actualizado con info de OAuth"""
         print(f"\n🧪 MEET ADAPTER SELF-TEST")
         print(f"=" * 40)
-        print(f"📁 Token path: {getattr(self, 'token_path', 'N/A')}")
+        print(f"🌐 OAuth helper: {'✅ Disponible' if OAUTH_HELPER_AVAILABLE else '❌ No disponible'}")
         print(f"🔑 Has credentials: {self.has_credentials}")
         print(f"🔧 Meet manager: {'✅ Activo' if self.meet_manager else '❌ No disponible'}")
         
-        if self.meet_manager:
-            try:
-                print(f"✅ Test de conexión: EXITOSO")
-                print(f"📊 Puede crear reuniones reales de Google Meet")
-                print(f"🔗 Genera enlaces: https://meet.google.com/...")
-            except Exception as e:
-                print(f"⚠️ Test de conexión: ERROR - {e}")
+        if self.meet_manager and OAUTH_HELPER_AVAILABLE:
+            print(f"🎯 Método: OAuth desde variables de entorno")
+        elif self.meet_manager:
+            print(f"🎯 Método: Legacy con archivos JSON")
         else:
             print(f"ℹ️ Modo básico - sin conexión real")
         

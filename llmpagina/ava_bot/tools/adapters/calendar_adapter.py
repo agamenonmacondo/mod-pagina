@@ -8,69 +8,186 @@ from typing import Dict, Any
 
 logger = logging.getLogger(__name__)
 
+# ✅ AGREGAR OAUTH_HELPER AL PATH
+current_dir = Path(__file__).parent
+tools_dir = current_dir.parent
+ava_bot_dir = tools_dir.parent
+utils_dir = ava_bot_dir / 'utils'
+
+# Agregar ruta de utils
+if str(utils_dir) not in sys.path:
+    sys.path.insert(0, str(utils_dir))
+
+# ✅ IMPORTAR OAUTH_HELPER
+try:
+    from oauth_helper import get_google_credentials
+    OAUTH_HELPER_AVAILABLE = True
+    print("✅ OAuth helper disponible para Calendar")
+except ImportError:
+    OAUTH_HELPER_AVAILABLE = False
+    print("⚠️ OAuth helper no disponible para Calendar")
+
 class CalendarAdapter:
-    """Adaptador para crear eventos de Google Calendar"""
+    """Adaptador para crear eventos de Google Calendar con OAuth env vars"""
     
     name = "calendar"
-    description = "Create and manage Google Calendar events"
+    description = "Create and manage Google Calendar events with OAuth env vars"
     
     def __init__(self):
-        """Inicialización con ruta corregida para token.json y CalendarManager"""
+        """Inicialización con OAuth desde variables de entorno"""
         try:
-            self.description = "Ava Bot calendar tool - Create and manage Google Calendar events"
+            self.description = "Ava Bot calendar tool - OAuth env vars support"
             
-            # ✅ RUTA CORREGIDA PARA ENCONTRAR TOKEN.JSON
-            current_dir = Path(__file__).parent           # .../tools/adapters/
-            tools_dir = current_dir.parent                # .../tools/
-            ava_bot_dir = tools_dir.parent                # .../ava_bot/
-            token_path = ava_bot_dir / 'token.json'       # .../ava_bot/token.json
-            
-            logger.info(f"🔍 Buscando token en: {token_path}")
-            
-            # ✅ CARGAR CalendarManager REAL UNA SOLA VEZ
+            # ✅ INTENTAR OAUTH HELPER PRIMERO
             self.calendar_manager = None
             self.has_credentials = False
             
-            if token_path.exists():
-                logger.info(f"✅ Token encontrado: {token_path}")
-                self.token_path = str(token_path)
-                
-                # ✅ IMPORTAR CalendarManager desde nodes/calendar
+            if OAUTH_HELPER_AVAILABLE:
                 try:
-                    # Agregar ruta al sys.path para importar
-                    calendar_nodes_path = str(ava_bot_dir / 'nodes' / 'calendar')
-                    if calendar_nodes_path not in sys.path:
-                        sys.path.append(calendar_nodes_path)
-                    
-                    from calendar_manager import CalendarManager
-                    self.calendar_manager = CalendarManager(self.token_path)
-                    self.has_credentials = True
-                    logger.info("✅ CalendarManager REAL inicializado - enlaces disponibles")
-                    print("✅ CalendarManager cargado - eventos reales disponibles")
-                    
+                    # Test de credenciales OAuth desde env vars
+                    creds = get_google_credentials(['https://www.googleapis.com/auth/calendar'])
+                    if creds:
+                        # ✅ CREAR CALENDAR MANAGER CON OAUTH HELPER
+                        self._initialize_calendar_with_oauth(creds)
+                        logger.info("✅ CalendarManager inicializado con OAuth env vars")
+                        print("✅ CalendarManager cargado - OAuth desde variables de entorno")
+                    else:
+                        logger.warning("⚠️ OAuth env vars no disponibles")
                 except Exception as e:
-                    logger.error(f"❌ Error inicializando CalendarManager: {e}")
-                    print(f"⚠️ CalendarManager no disponible: {e}")
-                    self.has_credentials = False
-                    self.calendar_manager = None
-            else:
-                logger.info(f"ℹ️ Token no encontrado en {token_path}, usando modo básico")
-                print(f"⚠️ Token no encontrado - modo básico")
-                self.has_credentials = False
-                self.token_path = None
-                self.calendar_manager = None
+                    logger.error(f"❌ Error con OAuth env vars: {e}")
             
-            logger.info("✅ CalendarAdapter inicializado correctamente")
+            # ✅ FALLBACK: Método legacy con archivos
+            if not self.has_credentials:
+                logger.info("🔄 Intentando método legacy con archivos...")
+                self._initialize_calendar_legacy()
+            
+            logger.info("✅ CalendarAdapter inicializado")
             
         except Exception as e:
             logger.error(f"❌ Error inicializando CalendarAdapter: {e}")
-            print(f"❌ Error en CalendarAdapter: {e}")
-            # NO fallar - continuar en modo básico
             self.has_credentials = False
-            self.token_path = None
             self.calendar_manager = None
             self.description = "Ava Bot calendar tool - Basic mode"
     
+    def _initialize_calendar_with_oauth(self, creds):
+        """Inicializar CalendarManager con credenciales OAuth"""
+        try:
+            from googleapiclient.discovery import build
+            
+            class OAuthCalendarManager:
+                """CalendarManager usando OAuth desde env vars"""
+                
+                def __init__(self, credentials):
+                    self.service = build('calendar', 'v3', credentials=credentials)
+                
+                def create_event(self, summary, start_time, end_time, attendees=None, description="", timezone='America/Bogota'):
+                    """Crear evento en Google Calendar"""
+                    
+                    # Procesar asistentes
+                    event_attendees = []
+                    if attendees:
+                        if isinstance(attendees, str):
+                            for email in attendees.split(','):
+                                email = email.strip()
+                                if email and '@' in email:
+                                    event_attendees.append({'email': email})
+                        elif isinstance(attendees, list):
+                            for email in attendees:
+                                if email and '@' in email:
+                                    event_attendees.append({'email': email.strip()})
+                    
+                    # Crear evento
+                    event = {
+                        'summary': summary,
+                        'description': description,
+                        'start': {
+                            'dateTime': start_time,
+                            'timeZone': timezone,
+                        },
+                        'end': {
+                            'dateTime': end_time,
+                            'timeZone': timezone,
+                        },
+                        'attendees': event_attendees,
+                        'reminders': {
+                            'useDefault': False,
+                            'overrides': [
+                                {'method': 'email', 'minutes': 24 * 60},
+                                {'method': 'popup', 'minutes': 10},
+                            ],
+                        },
+                    }
+                    
+                    created_event = self.service.events().insert(calendarId='primary', body=event).execute()
+                    
+                    return {
+                        'id': created_event.get('id'),
+                        'htmlLink': created_event.get('htmlLink'),
+                        'summary': created_event.get('summary'),
+                        'start': created_event.get('start', {}).get('dateTime'),
+                        'end': created_event.get('end', {}).get('dateTime'),
+                        'attendees': [att.get('email') for att in created_event.get('attendees', [])],
+                        'error': None
+                    }
+                
+                def list_events(self, max_results=10):
+                    """Listar eventos del calendario"""
+                    now = datetime.utcnow().isoformat() + 'Z'
+                    
+                    events_result = self.service.events().list(
+                        calendarId='primary',
+                        timeMin=now,
+                        maxResults=max_results,
+                        singleEvents=True,
+                        orderBy='startTime'
+                    ).execute()
+                    
+                    events = events_result.get('items', [])
+                    
+                    processed_events = []
+                    for event in events:
+                        processed_events.append({
+                            'summary': event.get('summary', 'Sin título'),
+                            'start': event.get('start', {}).get('dateTime', event.get('start', {}).get('date', '')),
+                            'end': event.get('end', {}).get('dateTime', event.get('end', {}).get('date', '')),
+                            'htmlLink': event.get('htmlLink', ''),
+                            'attendees': [att.get('email') for att in event.get('attendees', [])]
+                        })
+                    
+                    return {
+                        'count': len(processed_events),
+                        'events': processed_events
+                    }
+            
+            self.calendar_manager = OAuthCalendarManager(creds)
+            self.has_credentials = True
+            
+        except Exception as e:
+            logger.error(f"Error inicializando OAuthCalendarManager: {e}")
+            raise
+    
+    def _initialize_calendar_legacy(self):
+        """Método legacy con archivos JSON"""
+        token_path = ava_bot_dir / 'token.json'
+        
+        if token_path.exists():
+            try:
+                calendar_nodes_path = str(ava_bot_dir / 'nodes' / 'calendar')
+                if calendar_nodes_path not in sys.path:
+                    sys.path.append(calendar_nodes_path)
+                
+                from calendar_manager import CalendarManager
+                self.calendar_manager = CalendarManager(str(token_path))
+                self.has_credentials = True
+                logger.info("✅ CalendarManager legacy inicializado")
+                
+            except Exception as e:
+                logger.error(f"❌ Error con método legacy: {e}")
+                self.has_credentials = False
+        else:
+            logger.info("ℹ️ Token no encontrado - modo básico")
+            self.has_credentials = False
+
     @property
     def schema(self) -> Dict[str, Any]:
         """Schema EXACTO para Calendar - SOLO parámetros que funcionan"""
@@ -154,21 +271,17 @@ class CalendarAdapter:
             }
     
     def _run_self_test(self):
-        """Auto-test del adapter para verificar funcionamiento"""
+        """Auto-test actualizado con info de OAuth"""
         print(f"\n🧪 CALENDAR ADAPTER SELF-TEST")
         print(f"=" * 40)
-        print(f"📁 Token path: {getattr(self, 'token_path', 'N/A')}")
+        print(f"🌐 OAuth helper: {'✅ Disponible' if OAUTH_HELPER_AVAILABLE else '❌ No disponible'}")
         print(f"🔑 Has credentials: {self.has_credentials}")
         print(f"🔧 Calendar manager: {'✅ Activo' if self.calendar_manager else '❌ No disponible'}")
         
-        if self.calendar_manager:
-            try:
-                # Test básico - intentar listar calendarios
-                test_result = self.calendar_manager.list_events(max_results=1)
-                print(f"✅ Test de conexión: EXITOSO")
-                print(f"📊 Puede acceder a Google Calendar")
-            except Exception as e:
-                print(f"⚠️ Test de conexión: ERROR - {e}")
+        if self.calendar_manager and OAUTH_HELPER_AVAILABLE:
+            print(f"🎯 Método: OAuth desde variables de entorno")
+        elif self.calendar_manager:
+            print(f"🎯 Método: Legacy con archivos JSON")
         else:
             print(f"ℹ️ Modo básico - sin conexión real")
         

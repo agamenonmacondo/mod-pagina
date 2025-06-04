@@ -1,109 +1,93 @@
+import os
 import json
+import sys
+from pathlib import Path
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from datetime import datetime, timedelta
-import random
-import string
+import logging
+
+logger = logging.getLogger(__name__)
+
+# ✅ IMPORTAR OAUTH HELPER
+sys.path.append(str(Path(__file__).parent.parent.parent / 'utils'))
+try:
+    from oauth_helper import get_google_credentials
+    OAUTH_HELPER_AVAILABLE = True
+    print("✅ OAuth helper disponible para Calendar")
+except ImportError:
+    OAUTH_HELPER_AVAILABLE = False
+    print("⚠️ OAuth helper no disponible para Calendar")
 
 class CalendarManager:
-    def __init__(self, token_path='token.json'):
-        self.token_path = token_path
-        self.service = None
-        self.simulation_mode = False
-        self.simulated_events = []
-        self._load_credentials()
+    """Gestor de Google Calendar"""
     
-    def _load_credentials(self):
-        """Cargar credenciales desde token.json"""
+    def __init__(self):
+        self.service = self._get_calendar_service()
+    
+    def _get_calendar_service(self):
+        """Obtener servicio de Google Calendar - ACTUALIZADO PARA ENV VARS"""
+        
+        scopes = ['https://www.googleapis.com/auth/calendar']
+        
+        # ✅ NUEVO: Intentar oauth_helper primero
+        if OAUTH_HELPER_AVAILABLE:
+            try:
+                creds = get_google_credentials(scopes)
+                service = build('calendar', 'v3', credentials=creds)
+                logger.info("✅ Calendar API service initialized via oauth_helper (env vars)")
+                return service
+            except Exception as e:
+                logger.warning(f"⚠️ Error with oauth_helper, falling back to legacy: {e}")
+        
+        # ✅ FALLBACK: Método legacy con archivos
+        token_path = Path(__file__).parent.parent.parent / 'token.json'
+        
+        if not token_path.exists():
+            logger.error(f"❌ No credentials available. Configure environment variables or provide {token_path}")
+            return None
+        
         try:
-            with open(self.token_path, 'r') as token:
-                token_data = json.load(token)
+            creds = Credentials.from_authorized_user_file(str(token_path), scopes)
             
-            creds = Credentials(
-                token=token_data['token'],
-                refresh_token=token_data['refresh_token'],
-                token_uri=token_data['token_uri'],
-                client_id=token_data['client_id'],
-                client_secret=token_data['client_secret'],
-                scopes=token_data['scopes']
-            )
+            # Refrescar si es necesario
+            if creds.expired and creds.refresh_token:
+                from google.auth.transport.requests import Request
+                creds.refresh(Request())
             
-            self.service = build('calendar', 'v3', credentials=creds)
+            service = build('calendar', 'v3', credentials=creds)
+            logger.info("✅ Calendar API service initialized via legacy method")
+            return service
             
         except Exception as e:
-            print(f"Error cargando credenciales: {e}")
-            raise
+            logger.error(f"❌ Error initializing Calendar service: {e}")
+            return None
     
-    def create_event(self, summary, start_time, end_time, attendees=None, timezone='UTC', description=None):
-        """Crear evento SOLO en Google Calendar (SIN Google Meet)"""
+    def create_event(self, summary, start_time, end_time, description=None, attendees=None):
+        """Crear evento en Google Calendar"""
+        
+        if not self.service:
+            return {"error": "Calendar service not available"}
+        
+        event = {
+            'summary': summary,
+            'start': {'dateTime': start_time, 'timeZone': 'America/New_York'},
+            'end': {'dateTime': end_time, 'timeZone': 'America/New_York'},
+        }
+        
+        if description:
+            event['description'] = description
+        
+        if attendees:
+            event['attendees'] = [{'email': email} for email in attendees]
+        
         try:
-            print(f"🔄 Creando evento de calendario: {summary} para {start_time}")
-            
-            # ✅ PROCESAR ATTENDEES
-            attendees_list = []
-            if attendees:
-                if isinstance(attendees, str):
-                    emails = [email.strip() for email in attendees.split(',') if email.strip()]
-                    attendees_list = [{'email': email} for email in emails]
-                elif isinstance(attendees, list):
-                    attendees_list = [{'email': email} if isinstance(email, str) else email for email in attendees]
-            
-            # ✅ ESTRUCTURA DEL EVENTO SIN GOOGLE MEET
-            event = {
-                'summary': summary,
-                'description': description or f"Evento programado automáticamente - {summary}",
-                'start': {
-                    'dateTime': start_time,
-                    'timeZone': timezone,
-                },
-                'end': {
-                    'dateTime': end_time,
-                    'timeZone': timezone,
-                },
-                'attendees': attendees_list,
-                'reminders': {
-                    'useDefault': False,
-                    'overrides': [
-                        {'method': 'email', 'minutes': 24 * 60},  # 1 día antes
-                        {'method': 'popup', 'minutes': 15},        # 15 minutos antes
-                    ],
-                }
-            }
-            
-            print(f"📅 Creando evento SOLO en calendario")
-            print(f"👥 Attendees: {attendees_list}")
-            
-            # ✅ INSERTAR EVENTO SIN conferenceDataVersion (sin Meet)
-            result = self.service.events().insert(
-                calendarId='primary',
-                body=event,
-                sendUpdates='all'  # Enviar invitaciones
-            ).execute()
-            
-            print(f"✅ Evento de calendario creado exitosamente!")
-            print(f"📝 ID: {result.get('id')}")
-            print(f"🔗 URL Calendar: {result.get('htmlLink')}")
-            
-            # ✅ RESULTADO SOLO CON DATOS DE CALENDAR
-            final_result = {
-                'id': result.get('id'),
-                'summary': result.get('summary'),
-                'start': result.get('start'),
-                'end': result.get('end'),
-                'htmlLink': result.get('htmlLink'),
-                'attendees': result.get('attendees', []),
-                'status': result.get('status'),
-                'created': result.get('created')
-            }
-            
-            print(f"🎯 Evento de calendario completado:")
-            print(f"   📅 Calendar: {final_result['htmlLink']}")
-            
-            return final_result
-            
+            event = self.service.events().insert(calendarId='primary', body=event).execute()
+            logger.info(f"✅ Event created: {event.get('htmlLink')}")
+            return {"success": True, "event_id": event['id'], "link": event.get('htmlLink')}
         except Exception as e:
-            print(f"❌ Error creando evento de calendario: {e}")
-            raise Exception(f"Error creando evento en Google Calendar: {str(e)}")
+            logger.error(f"❌ Error creating event: {e}")
+            return {"error": str(e)}
     
     def list_events(self, start_date=None, end_date=None, max_results=10):
         """Listar eventos del calendario"""
@@ -161,37 +145,6 @@ class CalendarManager:
         """Verificar disponibilidad en un horario específico - SIN PRINTS"""
         try:
             end_time = start_time + timedelta(hours=duration_hours)
-            
-            if self.simulation_mode:
-                # Verificar conflictos en eventos simulados - SILENCIOSO
-                conflicts = []
-                for event in self.simulated_events:
-                    try:
-                        event_start = datetime.fromisoformat(event["start"]["dateTime"])
-                        event_end = datetime.fromisoformat(event["end"]["dateTime"])
-                        
-                        # Verificar solapamiento
-                        if (start_time < event_end and end_time > event_start):
-                            conflicts.append({
-                                "summary": event["summary"],
-                                "start": event["start"]["dateTime"],
-                                "end": event["end"]["dateTime"]
-                            })
-                    except Exception:
-                        continue
-                
-                available = len(conflicts) == 0
-                
-                if available:
-                    message = f"✅ Horario disponible"
-                else:
-                    message = f"❌ Horario ocupado"
-                
-                return {
-                    "available": available,
-                    "message": message,
-                    "conflicts": conflicts
-                }
             
             # Modo real (Google Calendar) - SIN PRINTS
             time_min = start_time.isoformat() + 'Z'

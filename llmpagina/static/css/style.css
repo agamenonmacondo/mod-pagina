@@ -819,3 +819,35 @@ footer {
     border-bottom-left-radius: 5px;
     margin-left: 45px;
 }
+
+/* Hacer las burbujas de chat más anchas */
+.chat-message {
+    max-width: 85% !important; /* Aumentar de 70% a 85% */
+    width: auto;
+}
+
+/* Específicamente para mensajes de AVA */
+.chat-message.bot-message,
+.message-bot,
+.ava-message {
+    max-width: 90% !important; /* AVA puede ser aún más ancho */
+    width: auto;
+    word-wrap: break-word;
+}
+
+/* Contenedor del texto dentro de la burbuja */
+.chat-message .message-content,
+.chat-message .message-text {
+    width: 100%;
+    max-width: none;
+    padding: 12px 16px; /* Ajustar padding si es necesario */
+}
+
+/* Para mensajes largos de código o texto extenso */
+.chat-message pre,
+.chat-message code {
+    max-width: 100%;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
