@@ -38,7 +38,7 @@ class ToolRegistry:
             logger.warning(f"❌ Adapters directory not found: {adapters_dir}")
             return
         
-        # Lista de adapters conocidos (AGREGANDO PLAYWRIGHT ADAPTER)
+        # Lista de adapters conocidos (AGREGANDO MULTIMODAL MEMORY REAL)
         known_adapters = [
             ("calendar_adapter.py", "CalendarAdapter"),
             ("meet_adapter.py", "MeetAdapter"), 
@@ -50,10 +50,10 @@ class ToolRegistry:
             ("memory_adapter.py", "MemoryAdapter"),
             ("image_display_adapter.py", "ImageDisplayAdapter"),
             ("file_adapter.py", "FileManagerAdapter"),
-            # ✅ AGREGAR VISION ADAPTER
             ("vision_adapter.py", "VisionAdapter"),
-            # ✅ AGREGAR PLAYWRIGHT ADAPTER
-            ("playwright_adapter.py", "PlaywrightAdapter")
+            ("playwright_adapter.py", "PlaywrightAdapter"),
+            # ✅ AGREGAR MULTIMODAL MEMORY ADAPTER REAL
+            ("multimodal_memory_adapter.py", "MultimodalMemoryAdapter")
         ]
         
         for filename, class_name in known_adapters:

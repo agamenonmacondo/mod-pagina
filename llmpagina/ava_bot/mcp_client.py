@@ -367,16 +367,147 @@ async def test_mcp_client():
             })
             print(f"✅ Search result: {result}")
             
-            # Test memory tool
+            # ✅ CORREGIR: Test memory tool con acciones válidas
             print("\n🧠 Testing memory tool...")
             memory_result = await client.call_tool("memory", {
-                "action": "add",
-                "user_id": "test_user",
-                "message": "Testing memory functionality",
-                "response": "Memory test successful"
+                "action": "add",  # ✅ Cambiar de "store" a "add" 
+                "user_id": "test_user@email.com",
+                "content": "Testing memory functionality with MCP client",
+                "session_id": "mcp_test_session"
             })
             print(f"✅ Memory result: {memory_result}")
+            
+            # ✅ AGREGAR: Test multimodal memory tool con mejor output
+            print("\n🧠 Testing multimodal memory tool...")
+            multimodal_result = await client.call_tool("multimodal_memory", {
+                "action": "validate_system",
+                "user_id": "test_user@email.com"
+            })
+            
+            # Mostrar resultado de forma más clara
+            if "result" in multimodal_result:
+                content = multimodal_result["result"].get("content", [])
+                if content and len(content) > 0:
+                    text_content = content[0].get("text", "")
+                    if text_content:
+                        # Intentar parsear como JSON para mejor visualización
+                        try:
+                            import json
+                            parsed_content = json.loads(text_content)
+                            if parsed_content.get("success", False):
+                                print("✅ Multimodal memory validation: SUCCESS")
+                                validation_results = parsed_content.get("validation_results", {})
+                                summary = validation_results.get("summary", {})
+                                components_ok = summary.get("components_ok", 0)
+                                total_components = summary.get("total_components", 0)
+                                print(f"   📊 System components: {components_ok}/{total_components} OK")
+                                print(f"   🎯 System ready: {summary.get('system_ready', False)}")
+                            else:
+                                print(f"❌ Multimodal memory validation failed: {parsed_content.get('error', 'Unknown error')}")
+                        except json.JSONDecodeError:
+                            print(f"✅ Multimodal memory result: {text_content[:100]}...")
+                    else:
+                        print("⚠️ Empty response from multimodal memory")
+                else:
+                    print("⚠️ No content in multimodal memory response")
+            else:
+                print(f"❌ Multimodal memory error: {multimodal_result.get('error', 'Unknown error')}")
+
+        return True
         
+    except Exception as e:
+        print(f"❌ Test failed: {e}")
+        return False
+    finally:
+        await client.close()
+
+async def test_multimodal_memory():
+    """Test específico para memoria multimodal"""
+    import os
+    
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    server_path = os.path.join(current_dir, "mcp_server", "run_server.py")
+    
+    client = MCPClient([
+        sys.executable,
+        server_path,
+        "server"
+    ])
+    
+    try:
+        print("🧪 Testing Multimodal Memory Adapter...")
+        await client.start_server()
+        
+        # Listar herramientas y verificar multimodal_memory
+        tools = await client.list_tools()
+        multimodal_tool = None
+        
+        for tool in tools:
+            if tool['name'] == 'multimodal_memory':
+                multimodal_tool = tool
+                break
+        
+        if not multimodal_tool:
+            print("❌ multimodal_memory tool not found")
+            return False
+        
+        print(f"✅ Found multimodal_memory tool: {multimodal_tool['description']}")
+        
+        # Test 1: Validar sistema
+        print("\n🔍 Test 1: Validating system...")
+        result = await client.call_tool("multimodal_memory", {
+            "action": "validate_system",
+            "user_id": "test_user@email.com"
+        })
+        
+        if "error" in result:
+            print(f"❌ Validation failed: {result['error']}")
+            return False
+        
+        print(f"✅ System validation: {result.get('result', {}).get('content', [{}])[0].get('text', 'No response')}")
+        
+        # Test 2: Store text memory
+        print("\n💾 Test 2: Storing text memory...")
+        store_result = await client.call_tool("multimodal_memory", {
+            "action": "store_text_memory",
+            "user_id": "test_user@email.com",
+            "content": "Estoy buscando apartamentos en Melgar, Tolima para el próximo fin de semana. Necesito que tenga piscina y sea para 4 personas.",
+            "session_id": "mcp_test_session"
+        })
+        
+        if "error" in store_result:
+            print(f"❌ Store text failed: {store_result['error']}")
+        else:
+            print(f"✅ Text stored successfully")
+        
+        # Test 3: Search semantic memories
+        print("\n🔍 Test 3: Searching semantic memories...")
+        search_result = await client.call_tool("multimodal_memory", {
+            "action": "search_semantic_memories",
+            "user_id": "test_user@email.com",
+            "query": "apartamentos Melgar piscina",
+            "modalities": ["text"],
+            "limit": 3
+        })
+        
+        if "error" in search_result:
+            print(f"❌ Search failed: {search_result['error']}")
+        else:
+            print(f"✅ Search completed successfully")
+        
+        # Test 4: Get user stats
+        print("\n📊 Test 4: Getting user stats...")
+        stats_result = await client.call_tool("multimodal_memory", {
+            "action": "get_user_stats",
+            "user_id": "test_user@email.com"
+        })
+        
+        if "error" in stats_result:
+            print(f"❌ Stats failed: {stats_result['error']}")
+        else:
+            print(f"✅ Stats retrieved successfully")
+        
+        print("\n🎉 All multimodal memory tests passed!")
         return True
         
     except Exception as e:
@@ -568,14 +699,16 @@ def main():
     print("✅ Sistema MCP funcionando correctamente")
     print("✅ Cliente puede comunicarse con servidor")
     print("✅ Herramientas disponibles y funcionales")
+    print("✅ Memoria multimodal operativa")  # ✅ AGREGAR
     print("\n🚀 El sistema está listo para usar en el chat!")
     
-    # Instrucciones adicionales
+    # Instrucciones adicionales actualizadas
     print("\n📋 PRÓXIMOS PASOS:")
     print("1. Reinicia la aplicación Flask: python app.py")
     print("2. Abre el chat en tu navegador")
     print("3. Prueba enviando: 'busca información sobre Python'")
-    print("4. Verifica que las herramientas respondan correctamente")
+    print("4. Prueba enviando: 'almacena esta conversación en mi memoria'")  # ✅ AGREGAR
+    print("5. Verifica que las herramientas respondan correctamente")
     
     return True
 

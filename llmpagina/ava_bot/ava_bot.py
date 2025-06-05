@@ -15,13 +15,16 @@ from functools import wraps
 from role_promt import get_role_prompt
 from operational_promt import get_operational_prompt
 from tools.adapters.memory_adapter import SQLiteMemoryManager, MemoryAdapter
+from tools.adapters.multimodal_memory_adapter import MultimodalMemoryAdapter
 
-# Setup logging - SILENCIOSO
+# Setup logging - COMPLETAMENTE SILENCIOSO
 logging.basicConfig(
     level=logging.CRITICAL,  # Solo errores críticos
-    format='%(message)s'
+    format='',  # Sin formato
+    handlers=[logging.NullHandler()]  # Handler nulo
 )
 logger = logging.getLogger(__name__)
+logger.disabled = True  # ✅ DESHABILITAR COMPLETAMENTE
 
 # ✅ DATACLASS PARA CONFIGURACIÓN CENTRALIZADA
 @dataclass
@@ -288,7 +291,7 @@ def handle_errors(default_return=None, log_errors=True):
 
 # ✅ CLASE PRINCIPAL SIMPLIFICADA - SIN HARDCODEO
 class LLMWithMCPTools:
-    """LLM Groq Llama con herramientas MCP - Sin lógica hardcodeada"""
+    """LLM Groq Llama con herramientas MCP + MEMORIA MULTIMODAL AUTOMÁTICA"""
     
     def __init__(self, groq_api_key: str, mcp_server_path: str):
         self.groq_client = Groq(api_key=groq_api_key)
@@ -303,8 +306,9 @@ class LLMWithMCPTools:
         self.current_user_email = None
         self._cached_schemas = {}
         
-        # Inicializar memoria
+        # ✅ INICIALIZAR AMBOS SISTEMAS DE MEMORIA
         self._initialize_memory()
+        self._initialize_multimodal_memory()
 
     @handle_errors(default_return=None)
     def _initialize_memory(self):
@@ -315,6 +319,17 @@ class LLMWithMCPTools:
         except Exception as e:
             logger.warning(f"⚠️ Error inicializando SQLite: {e}")
             self.memory_adapter = None
+
+    @handle_errors(default_return=None)
+    def _initialize_multimodal_memory(self):
+        """Inicializa el sistema de memoria multimodal"""
+        try:
+            self.multimodal_memory = MultimodalMemoryAdapter()
+            logger.info("✅ Sistema de memoria multimodal inicializado")
+            logger.info(f"📁 Base path: {self.multimodal_memory.base_path}")
+        except Exception as e:
+            logger.warning(f"⚠️ Error inicializando memoria multimodal: {e}")
+            self.multimodal_memory = None
 
     @handle_errors(default_return=False)
     async def initialize(self) -> bool:
@@ -406,14 +421,30 @@ class LLMWithMCPTools:
 
     @handle_errors(default_return="No hay información disponible.")
     async def get_conversation_context(self, user_input: str) -> str:
-        """Obtiene contexto de conversaciones previas de forma optimizada"""
-        if not self.memory_adapter:
-            return "No hay información previa disponible."
-        
-        user_id = self.current_user_email or "unknown_user"
+        """
+        ✅ INYECCIÓN AUTOMÁTICA: Obtiene contexto multimodal relevante automáticamente
+        """
         context_parts = []
+        user_id = self.current_user_email or "unknown_user"
         
-        # Métodos de obtención de memoria con fallbacks
+        # ✅ 1. MEMORIA TRADICIONAL (SQLite)
+        if self.memory_adapter:
+            traditional_context = await self._get_traditional_memory_context(user_id)
+            if traditional_context:
+                context_parts.append("📊 INFORMACIÓN BÁSICA:")
+                context_parts.append(traditional_context)
+        
+        # ✅ 2. MEMORIA MULTIMODAL SEMÁNTICA (NUEVA)
+        if self.multimodal_memory:
+            multimodal_context = await self._get_multimodal_memory_context(user_input, user_id)
+            if multimodal_context:
+                context_parts.append("\n🧠 CONTEXTO MULTIMODAL RELEVANTE:")
+                context_parts.append(multimodal_context)
+        
+        return "\n".join(context_parts) if context_parts else "No hay información previa disponible."
+
+    async def _get_traditional_memory_context(self, user_id: str) -> str:
+        """Obtiene contexto de memoria tradicional SQLite"""
         memory_methods = [
             ('get_recent_conversations', lambda: self.memory_adapter.get_recent_conversations(user_id, limit=5)),
             ('get_user_messages', lambda: self.memory_adapter.get_user_messages(user_id, limit=10)),
@@ -425,58 +456,220 @@ class LLMWithMCPTools:
                 try:
                     data = method_call()
                     if data:
-                        context_parts.append(f"INFORMACIÓN DISPONIBLE ({method_name}):")
-                        context_parts.append(str(data)[:500] + "..." if len(str(data)) > 500 else str(data))
-                        break
+                        return str(data)[:300] + "..." if len(str(data)) > 300 else str(data)
                 except Exception as e:
                     logger.debug(f"Error con {method_name}: {e}")
                     continue
         
-        return "\n".join(context_parts) if context_parts else "No hay información previa específica."
+        return ""
+
+    async def _get_multimodal_memory_context(self, user_input: str, user_id: str) -> str:
+        """
+        ✅ INYECCIÓN INTELIGENTE: Busca automáticamente memoria multimodal relevante
+        """
+        try:
+            # ✅ BÚSQUEDA SEMÁNTICA AUTOMÁTICA basada en input del usuario
+            semantic_results = await self.multimodal_memory.search_semantic_memories(
+                query=user_input,
+                user_id=user_id,
+                modalities=["text"],
+                limit=3
+            )
+            
+            if not semantic_results:
+                # ✅ FALLBACK: Contexto reciente si no hay resultados semánticos
+                recent_context = await self.multimodal_memory.get_recent_multimodal_context(
+                    user_id=user_id,
+                    days=7,
+                    limit=3
+                )
+                if recent_context and recent_context.get('conversations'):
+                    return self._format_recent_multimodal_context(recent_context)
+                
+                return ""
+            
+            # ✅ FORMATEAR RESULTADOS SEMÁNTICOS
+            return self._format_semantic_results(semantic_results)
+            
+        except Exception as e:
+            logger.error(f"Error obteniendo contexto multimodal: {e}")
+            return ""
+
+    def _format_semantic_results(self, results: List[Dict]) -> str:
+        """Formatea resultados de búsqueda semántica para contexto"""
+        if not results:
+            return ""
+        
+        formatted = []
+        for i, result in enumerate(results[:3], 1):
+            content = result.get('content', '')
+            similarity = result.get('similarity_score', 0)
+            timestamp = result.get('created_at', '')
+            
+            # Truncar contenido si es muy largo
+            if len(content) > 150:
+                content = content[:150] + "..."
+            
+            formatted.append(f"{i}. [{timestamp}] (Relevancia: {similarity:.2f})")
+            formatted.append(f"   {content}")
+        
+        return "\n".join(formatted)
+
+    def _format_recent_multimodal_context(self, context: Dict) -> str:
+        """Formatea contexto reciente multimodal"""
+        conversations = context.get('conversations', [])
+        if not conversations:
+            return ""
+        
+        formatted = []
+        for conv in conversations[:3]:
+            content = conv.get('content', '')
+            timestamp = conv.get('created_at', '')
+            
+            if len(content) > 100:
+                content = content[:100] + "..."
+                
+            formatted.append(f"• [{timestamp}] {content}")
+        
+        return "\n".join(formatted)
+
+    # ...existing code...
+    async def _extract_and_store_multimodal_memory(self, user_input: str, response: str) -> bool:
+        """
+        ✅ EXTRACCIÓN AUTOMÁTICA: Analiza si la conversación debe guardarse en memoria multimodal
+        """
+        if not self.multimodal_memory:
+            return False
+        
+        try:
+            # ✅ CRITERIOS AUTOMÁTICOS PARA GUARDAR EN MEMORIA MULTIMODAL
+            should_store = await self._should_store_in_multimodal_memory(user_input, response)
+            
+            if should_store:
+                user_id = self.current_user_email or "unknown_user"
+                session_id = f"auto_session_{datetime.now().strftime('%Y%m%d_%H%M')}"
+                
+                # Combinar input del usuario + respuesta para contexto completo
+                combined_content = f"USUARIO: {user_input}\nAVA: {response}"
+                
+                # Guardar en memoria multimodal
+                conversation_id = await self.multimodal_memory.store_text_memory(
+                    user_id=user_id,
+                    content=combined_content,
+                    session_id=session_id
+                )
+                
+                logger.info(f"🧠 Memoria multimodal guardada automáticamente (ID: {conversation_id})")
+                return True
+                
+        except Exception as e:
+            logger.error(f"❌ Error guardando memoria multimodal: {e}")
+            
+        return False
+
+    async def _should_store_in_multimodal_memory(self, user_input: str, response: str) -> bool:
+        """
+        ✅ CRITERIOS INTELIGENTES: Decide automáticamente si guardar en memoria multimodal
+        """
+        # Combinar texto para análisis
+        combined_text = f"{user_input} {response}".lower()
+        
+        # ✅ PATRONES QUE INDICAN INFORMACIÓN IMPORTANTE
+        important_patterns = [
+            # Información personal/empresarial
+            r'\b(mi nombre|me llamo|soy|trabajo en|mi empresa|mi negocio)\b',
+            r'\b(email|correo|teléfono|dirección|contacto)\b',
+            
+            # Búsquedas y preferencias
+            r'\b(busco|necesito|quiero|prefiero|me gusta)\b',
+            r'\b(apartamento|casa|hotel|viaje|vacaciones)\b',
+            r'\b(presupuesto|precio|costo|inversión)\b',
+            
+            # Decisiones y resultados importantes
+            r'\b(comprar|alquilar|contratar|elegir|decidir)\b',
+            r'\b(resultado|encontré|seleccionar|opción)\b',
+            
+            # Proyectos y planes
+            r'\b(proyecto|plan|objetivo|meta|estrategia)\b',
+            r'\b(reunión|cita|evento|fecha|programar)\b',
+            
+            # Información específica de dominio
+            r'\b(melgar|tolima|apartamento|piscina|aire|personas)\b',
+            r'\b(inmobiliaria|propiedad|habitación|servicios)\b'
+        ]
+        
+        # Verificar si algún patrón coincide
+        for pattern in important_patterns:
+            if re.search(pattern, combined_text):
+                return True
+        
+        # ✅ TAMBIÉN GUARDAR SI LA RESPUESTA CONTIENE RESULTADOS DE HERRAMIENTAS
+        tool_indicators = [
+            'encontré', 'busqué', 'he encontrado', 'según mi búsqueda',
+            'aquí tienes', 'estos son los resultados', 'te sugiero'
+        ]
+        
+        for indicator in tool_indicators:
+            if indicator in response.lower():
+                return True
+        
+        # ✅ GUARDAR CONVERSACIONES LARGAS (indican importancia)
+        if len(user_input) > 50 or len(response) > 100:
+            return True
+            
+        return False
+
+    def _format_available_tools(self) -> str:
+        """Formatea lista de herramientas disponibles"""
+        if not self.available_tools:
+            return "No hay herramientas disponibles"
+        
+        formatted = []
+        for tool in self.available_tools:
+            name = tool.get('name', 'Unknown')
+            description = tool.get('description', 'Sin descripción')
+            formatted.append(f"• {name}: {description}")
+        
+        return "\n".join(formatted)
 
     @handle_errors(default_return="Error procesando solicitud")
     async def process_user_input(self, user_input: str) -> str:
-        """✅ PROCESADOR PRINCIPAL - SOLO LLM DECIDE, SIN HARDCODEO"""
-        logger.info(f"👤 Usuario: {user_input}")
-        
-        # ✅ AÑADIR A MEMORIA LOCAL - NO LÓGICA DE NEGOCIO
+        """✅ PROCESADOR PRINCIPAL SILENCIOSO"""
+        # ✅ AÑADIR A MEMORIA LOCAL
         self.conversation_history.append({
             'role': 'user',
             'content': user_input,
             'timestamp': datetime.now().isoformat()
         })
         
-        # ✅ PROCESAR DATOS BÁSICOS - SIN DECISIONES DE COMPORTAMIENTO
+        # ✅ PROCESAR DATOS BÁSICOS
         self._process_user_data(user_input)
         
-        # ✅ OBTENER CONTEXTO - NO DECISIONES
+        # ✅ OBTENER CONTEXTO MULTIMODAL
         memory_context = await self.get_conversation_context(user_input)
         
-        # ✅ EL LLM DECIDE TODO - CERO HARDCODEO
+        # ✅ EL LLM DECIDE TODO
         final_response = await self._generate_llm_response(user_input, memory_context)
         
-        # ✅ GUARDAR RESPUESTA - NO LÓGICA DE NEGOCIO
+        # ✅ GUARDAR EN MEMORIA TRADICIONAL
         self._save_conversation(user_input, final_response)
+        
+        # ✅ EXTRACCIÓN Y GUARDADO AUTOMÁTICO EN MEMORIA MULTIMODAL
+        await self._extract_and_store_multimodal_memory(user_input, final_response)
         
         return final_response
 
+    @handle_errors(default_return="Error generando respuesta")
     async def _generate_llm_response(self, user_input: str, memory_context: str) -> str:
-        """✅ GENERACIÓN DE RESPUESTA CON DEBUG DETALLADO"""
+        """✅ GENERACIÓN DE RESPUESTA SILENCIOSA - SOLO RESULTADO FINAL"""
         try:
-            print("🔍 DEBUG: Paso 1 - Iniciando _generate_llm_response")
-            
             # STEP 1: Role prompt
-            print("🔍 DEBUG: Paso 2 - Obteniendo role_prompt...")
             role_prompt = get_role_prompt()
-            print("✅ role_prompt obtenido")
             
             # STEP 2: Tools
-            print("🔍 DEBUG: Paso 3 - Formateando tools...")
             tools_formatted = self._format_tool_schemas()
-            print("✅ tools_formatted obtenido")
             
-            # STEP 3: Fecha ULTRA SEGURA
-            print("🔍 DEBUG: Paso 4 - Construyendo fecha...")
+            # STEP 3: Fecha
             now = datetime.now()
             date_part = now.strftime("%Y-%m-%d")
             day_part = now.strftime("%A")  
@@ -484,57 +677,39 @@ class LLMWithMCPTools:
             
             current_date_context = "📅 FECHA ACTUAL: " + date_part + " (" + day_part + ")\n"
             current_date_context += "⏰ HORA ACTUAL: " + time_part + "\n\n"
-            print("✅ current_date_context construido")
             
             # STEP 4: Operational prompt
-            print("🔍 DEBUG: Paso 5 - Obteniendo operational_prompt...")
             operational_prompt = get_operational_prompt(tools_formatted, self.current_user_email)
-            print("✅ operational_prompt obtenido")
             
             # STEP 5: System prompt
-            print("🔍 DEBUG: Paso 6 - Construyendo system_prompt...")
             system_prompt = self._build_pure_llm_system_prompt(role_prompt, operational_prompt, memory_context, user_input, current_date_context)
-            print("✅ system_prompt construido")
             
             # STEP 6: Messages
-            print("🔍 DEBUG: Paso 7 - Construyendo messages...")
             messages = [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_input}
             ]
-            print("✅ messages construidos")
             
-            # STEP 7: LLM Call
-            print("🔍 DEBUG: Paso 8 - Llamando al LLM...")
+            # STEP 7: PRIMERA LLAMADA AL LLM - SILENCIOSA
             response = self.groq_client.chat.completions.create(
                 messages=messages,
                 model=self.config.PRIMARY_MODEL,
                 temperature=self.config.DECISION_TEMPERATURE,
                 max_tokens=1500
             )
-            print("✅ LLM respondió")
             
-            llm_response = response.choices[0].message.content
+            first_llm_response = response.choices[0].message.content
             
-            # STEP 8: Tool extraction
-            print("🔍 DEBUG: Paso 9 - Extrayendo tool request...")
-            tool_request = JSONUtils.extract_tool_request(llm_response)
-            print("✅ tool request extraído")
+            # STEP 8: Tool extraction - SILENCIOSO
+            tool_request = JSONUtils.extract_tool_request(first_llm_response)
             
             if tool_request:
-                print("🔍 DEBUG: Paso 10 - Ejecutando herramienta...")
-                return await self._execute_tool_and_respond(user_input, tool_request, memory_context)
+                return await self._execute_tool_and_respond(user_input, tool_request, memory_context, first_llm_response)
             
-            print("🔍 DEBUG: Paso 11 - Retornando respuesta directa")
-            return llm_response
-            
+            return first_llm_response
+        
         except Exception as e:
-            print("💥 ERROR EN _generate_llm_response:")
-            print("❌ Error: " + str(e))
-            print("❌ Tipo: " + str(type(e)))
-            import traceback
-            traceback.print_exc()
-            return "Error procesando: " + str(e)
+            return "Error procesando tu solicitud. Intenta nuevamente."
 
     def _build_pure_llm_system_prompt(self, role_prompt: str, operational_prompt: str, memory_context: str, user_input: str, current_date_context: str) -> str:
         """✅ CONSTRUYE SYSTEM PROMPT - ORDEN CORRECTO"""
@@ -553,67 +728,90 @@ CONVERSACIÓN ACTUAL:
 Analiza la solicitud del usuario: "{user_input}"
 """
 
-    @handle_errors(default_return="Error ejecutando herramienta")
-    async def _execute_tool_and_respond(self, user_input: str, tool_request: dict, memory_context: str) -> str:
-        """✅ EJECUTA HERRAMIENTA Y RESPONDE - SIN LÓGICA HARDCODEADA"""
+    def _format_conversation_history(self) -> str:
+        """Formatea historial de conversación"""
+        if not self.conversation_history:
+            return "No hay historial de conversación"
+        
+        return "\n".join(f"{msg.get('role', 'unknown').upper()}: {msg.get('content', '')}" 
+                        for msg in self.conversation_history[-5:])
+
+    def _save_conversation(self, user_input: str, response: str):
+        """Guarda conversación en memoria - SILENCIOSO"""
+        self.conversation_history.append({
+            'role': 'assistant',
+            'content': response,
+            'timestamp': datetime.now().isoformat()
+        })
+        
+        if self.memory_adapter:
+            try:
+                save_methods = [
+                    lambda: self.memory_adapter.add_conversation(
+                        self.current_user_email or "unknown_user", user_input, response),
+                    lambda: self.memory_adapter.add_message(
+                        self.current_user_email or "unknown_user", user_input, "conversation")
+                ]
+                
+                for method in save_methods:
+                    try:
+                        method()
+                        break
+                    except AttributeError:
+                        continue
+            except Exception:
+                pass  # Silencioso
+
+    def _format_available_tools(self) -> str:
+        """Formatea herramientas disponibles"""
+        if not self.available_tools:
+            return "No hay herramientas MCP disponibles"
+        
+        return "\n".join(f"• {tool.get('name', 'Unknown')}: {tool.get('description', 'No description')}" 
+                        for tool in self.available_tools)
+
+    async def _execute_tool_and_respond(self, user_input: str, tool_request: dict, memory_context: str, first_llm_response: str = "") -> str:
+        """✅ EJECUTA HERRAMIENTA Y RESPONDE - SILENCIOSO"""
         tool_name = tool_request['use_tool']
         arguments = tool_request['arguments']
         
-        logger.info(f"🎯 Ejecutando herramienta: {tool_name}")
-        
-        # ✅ EJECUTAR HERRAMIENTA REAL
+        # ✅ EJECUTAR HERRAMIENTA REAL - SIN PRINTS
         tool_result = await self.execute_tool(tool_name, arguments)
         
         if tool_result is not None:
-            # ✅ PROCESAR RESULTADO CON LLM - SIN DECISIONES HARDCODEADAS
-            return await self._generate_autonomous_response(user_input, tool_request, tool_result, memory_context)
+            # ✅ SEGUNDA LLAMADA AL LLM - PROCESAR RESULTADO
+            return await self._generate_autonomous_response(user_input, tool_request, tool_result, memory_context, first_llm_response)
         
         return "La herramienta se ejecutó pero no devolvió un resultado válido."
 
     async def execute_tool(self, tool_name: str, arguments: Dict) -> Any:
-        """✅ EJECUTA HERRAMIENTA MCP - CON DEBUG COMPLETO"""
+        """✅ EJECUTA HERRAMIENTA MCP - COMPLETAMENTE SILENCIOSO"""
         if not self.mcp_client:
             return {"error": "MCP client no disponible", "tool": tool_name, "status": "failed"}
         
         try:
             timeout = self.config.TOOL_TIMEOUTS.get(tool_name, self.config.TOOL_TIMEOUTS['default'])
             
-            # ✅ MOSTRAR QUÉ SE ENVÍA AL MCP
-            print(f"\n🎯 EJECUTANDO HERRAMIENTA: {tool_name}")
-            print(f"📤 ARGUMENTOS: {json.dumps(arguments, indent=2, ensure_ascii=False)}")
-            
             result = await asyncio.wait_for(
                 self.mcp_client.call_tool(tool_name, arguments),
                 timeout=timeout
             )
             
-            # ✅ MOSTRAR RESULTADO CRUDO DEL MCP
-            print(f"\n📥 RESULTADO MCP:")
-            print(f"{'='*50}")
-            print(f"{json.dumps(result, indent=2, ensure_ascii=False) if isinstance(result, (dict, list)) else str(result)}")
-            print(f"{'='*50}")
-            
-            logger.info(f"✅ {tool_name} completado")
             return result
             
         except asyncio.TimeoutError:
             error_msg = f"Timeout ejecutando {tool_name} ({timeout}s)"
-            logger.error(error_msg)
             return {"error": error_msg, "tool": tool_name, "status": "timeout"}
         except Exception as e:
             error_msg = f"Error ejecutando {tool_name}: {str(e)}"
-            logger.error(error_msg)
             return {"error": error_msg, "tool": tool_name, "status": "failed", "exception": str(e)}
 
     async def _generate_autonomous_response(self, user_input: str, tool_request: dict, tool_result: dict, memory_context: str, first_llm_response: str = "") -> str:
-        """✅ SEGUNDA LLAMADA AL LLM - PROCESAR RESULTADO SIN HARDCODEO"""
+        """✅ SEGUNDA LLAMADA AL LLM - SILENCIOSA"""
         try:
             role_prompt = get_role_prompt()
            
-            # ✅ SYSTEM PROMPT PARA ANÁLISIS DE RESULTADO - SIN LÓGICA PREDEFINIDA
             analysis_system_prompt = f"""{role_prompt}
-
-
 
 🔄 **SEGUNDA LLAMADA - PROCESA RESULTADO:**
 
@@ -628,12 +826,12 @@ Analiza la solicitud del usuario: "{user_input}"
 **RESULTADO REAL OBTENIDO:**
 {str(tool_result)}
 
-
-
 **INFORMACIÓN PREVIA DEL USUARIO:**
 {memory_context}
 
-✨ **RESPONDE COMO AVA - NATURAL Y ÚTIL**"""
+✨ **RESPONDE COMO AVA - NATURAL Y ÚTIL**
+
+Por favor, interpreta este resultado y proporciona una respuesta final clara y útil al usuario en español. NO muestres código JSON al usuario."""
 
             messages = [
                 {"role": "system", "content": analysis_system_prompt},
@@ -650,54 +848,43 @@ Analiza la solicitud del usuario: "{user_input}"
             return response.choices[0].message.content
             
         except Exception as e:
-            logger.error(f"Error en segunda llamada al LLM: {e}")
             return f"Completé la operación. Resultado: {str(tool_result)}"
 
-    # ✅ MÉTODOS UTILITARIOS - SIN LÓGICA DE NEGOCIO
-    def _format_available_tools(self) -> str:
-        """Formatea herramientas disponibles"""
-        if not self.available_tools:
-            return "No hay herramientas MCP disponibles"
+    @handle_errors(default_return="Error ejecutando herramienta")
+    async def _execute_tool_request(self, tool_request: Dict[str, Any]) -> str:
+        """Ejecuta solicitud de herramienta específica - MÉTODO SIMPLIFICADO PARA COMPATIBILIDAD"""
+        tool_name = tool_request.get('use_tool', '')
+        arguments = tool_request.get('arguments', {})
         
-        return "\n".join(f"• {tool.get('name', 'Unknown')}: {tool.get('description', 'No description')}" 
-                        for tool in self.available_tools)
-
-    def _format_conversation_history(self) -> str:
-        """Formatea historial de conversación"""
-        if not self.conversation_history:
-            return "No hay historial de conversación"
+        if not tool_name:
+            return "❌ Error: Nombre de herramienta no especificado"
         
-        return "\n".join(f"{msg.get('role', 'unknown').upper()}: {msg.get('content', '')}" 
-                        for msg in self.conversation_history[-5:])
-
-    def _save_conversation(self, user_input: str, response: str):
-        """Guarda conversación en memoria - SIN LÓGICA DE NEGOCIO"""
-        self.conversation_history.append({
-            'role': 'assistant',
-            'content': response,
-            'timestamp': datetime.now().isoformat()
-        })
+        # Verificar que la herramienta existe
+        available_tool_names = [tool['name'] for tool in self.available_tools]
+        if tool_name not in available_tool_names:
+            return f"❌ Error: Herramienta '{tool_name}' no disponible. Disponibles: {', '.join(available_tool_names)}"
         
-        if self.memory_adapter:
-            try:
-                # Intentar múltiples métodos de guardado
-                save_methods = [
-                    lambda: self.memory_adapter.add_conversation(
-                        self.current_user_email or "unknown_user", user_input, response),
-                    lambda: self.memory_adapter.add_message(
-                        self.current_user_email or "unknown_user", user_input, "conversation")
-                ]
+        try:
+            # Usar el método execute_tool
+            result = await self.execute_tool(tool_name, arguments)
+            
+            # Procesar resultado para compatibilidad
+            if isinstance(result, dict):
+                if 'result' in result:
+                    content = result['result'].get('content', [])
+                    if content and len(content) > 0:
+                        text_content = content[0].get('text', str(result))
+                        return text_content
+                    return str(result['result'])
+                elif 'error' in result:
+                    return f"❌ Error en {tool_name}: {result['error']}"
+                else:
+                    return str(result)
+            else:
+                return str(result)
                 
-                for method in save_methods:
-                    try:
-                        method()
-                        print(f"💬 Mensaje agregado a SQLite para {self.current_user_email or 'unknown_user'}")
-                        logger.info("✅ Conversación guardada en memoria")
-                        break
-                    except AttributeError:
-                        continue
-            except Exception as e:
-                logger.warning(f"⚠️ Error guardando conversación: {e}")
+        except Exception as e:
+            return f"❌ Error ejecutando {tool_name}: {str(e)}"
 
     async def cleanup(self):
         """Limpieza de recursos"""
@@ -708,7 +895,7 @@ Analiza la solicitud del usuario: "{user_input}"
         except Exception as e:
             logger.warning(f"⚠️ Error en cleanup: {e}")
 
-# ✅ FUNCIÓN MAIN SIN CAMBIOS
+# ✅ FUNCIÓN MAIN RESTAURADA
 async def main():
     """Función principal optimizada"""
     print("\n🎯 INICIANDO SISTEMA AVA...")
@@ -738,9 +925,11 @@ async def main():
         tools_count = str(len(llm.available_tools))
         tools_status = '✅' if mcp_initialized else '❌'
         memory_status = '✅' if llm.memory_adapter else '❌'
+        multimodal_status = '✅' if llm.multimodal_memory else '❌'
         
         print("📊 Herramientas MCP: " + tools_count + " " + tools_status)
         print("💾 Memoria SQLite: " + memory_status)
+        print("🧠 Memoria Multimodal: " + multimodal_status)
         
         # Loop principal de conversación CON MARCADOR
         await conversation_loop_with_marker(llm, mcp_initialized)
@@ -751,7 +940,7 @@ async def main():
         if llm:
             await llm.cleanup()
 
-# ✅ MODIFICAR SOLO conversation_loop PARA AGREGAR MARCADOR
+# ✅ LOOP DE CONVERSACIÓN CON MARCADOR
 async def conversation_loop_with_marker(llm: LLMWithMCPTools, mcp_initialized: bool):
     """Loop principal de conversación optimizada CON MARCADOR DE FIN"""
     print("\n💬 ¡Empecemos a conversar! Escribe tu mensaje:")
@@ -790,7 +979,7 @@ async def conversation_loop_with_marker(llm: LLMWithMCPTools, mcp_initialized: b
             print("\n❌ Error: " + str(e))
             print(AvaConfig.RESPONSE_END_MARKER)  # ✅ MARCADOR EN ERROR
 
-# ✅ MODIFICAR handle_special_commands PARA INCLUIR MARCADOR
+# ✅ COMANDOS ESPECIALES CON MARCADOR
 async def handle_special_commands_with_marker(user_input: str, llm: LLMWithMCPTools, mcp_initialized: bool) -> bool:
     """Maneja comandos especiales del sistema CON MARCADOR"""
     user_input_lower = user_input.lower()
@@ -822,9 +1011,26 @@ async def handle_special_commands_with_marker(user_input: str, llm: LLMWithMCPTo
         print(AvaConfig.RESPONSE_END_MARKER)  # ✅ MARCADOR EN EMAIL
         return True
     
+    # ✅ NUEVOS COMANDOS PARA MEMORIA MULTIMODAL
+    if user_input_lower == 'memoria':
+        await show_memory_stats(llm)
+        print(AvaConfig.RESPONSE_END_MARKER)
+        return True
+    
+    if user_input_lower.startswith('buscar:'):
+        query = user_input[7:].strip()
+        await search_multimodal_memory(llm, query)
+        print(AvaConfig.RESPONSE_END_MARKER)
+        return True
+    
+    if user_input_lower == 'stats':
+        await show_full_system_stats(llm, mcp_initialized)
+        print(AvaConfig.RESPONSE_END_MARKER)
+        return True
+    
     return False
 
-# ✅ MANTENER print_debug_info ORIGINAL
+# ✅ FUNCIÓN DEBUG MEJORADA
 def print_debug_info(llm: LLMWithMCPTools, mcp_initialized: bool):
     """Muestra información de debug del sistema"""
     print("\n🔍 INFORMACIÓN DE DEBUG:")
@@ -839,11 +1045,15 @@ def print_debug_info(llm: LLMWithMCPTools, mcp_initialized: bool):
     tools_status = '✅' if mcp_initialized else '❌'
     print("  • Herramientas MCP: " + tools_count + " " + tools_status)
     
-    # Memoria
+    # Memoria tradicional
     memory_status = '✅' if llm.memory_adapter else '❌'
     print("  • Memoria SQLite: " + memory_status)
     
-    # Usuario actual
+    # ✅ NUEVA: Memoria multimodal
+    multimodal_status = '✅' if llm.multimodal_memory else '❌'
+    print("  • Memoria Multimodal: " + multimodal_status)
+    
+    # Usuario current_user
     current_user = llm.current_user_email or "No identificado"
     print("  • Usuario actual: " + current_user)
     
@@ -855,7 +1065,89 @@ def print_debug_info(llm: LLMWithMCPTools, mcp_initialized: bool):
     schemas_count = str(len(llm._cached_schemas))
     print("  • Schemas cargados: " + schemas_count)
 
-# ✅ MANTENER EL PUNTO DE ENTRADA ORIGINAL
+# ✅ NUEVAS FUNCIONES PARA MEMORIA MULTIMODAL
+async def show_memory_stats(llm: LLMWithMCPTools):
+    """Muestra estadísticas de memoria multimodal"""
+    print("\n🧠 ESTADÍSTICAS DE MEMORIA MULTIMODAL:")
+    print("-" * 40)
+    
+    if not llm.multimodal_memory:
+        print("❌ Memoria multimodal no disponible")
+        return
+    
+    try:
+        user_id = llm.current_user_email or "unknown_user"
+        
+        # Obtener estadísticas
+        stats = await llm.multimodal_memory.get_memory_stats(user_id)
+        
+        if stats:
+            print(f"👤 Usuario: {user_id}")
+            print(f"📝 Total conversaciones: {stats.get('total_conversations', 0)}")
+            print(f"🖼️ Total imágenes: {stats.get('total_images', 0)}")
+            print(f"📊 Total embeddings: {stats.get('total_embeddings', 0)}")
+            print(f"📅 Última actividad: {stats.get('last_activity', 'N/A')}")
+        else:
+            print("📭 No hay datos de memoria para este usuario")
+            
+    except Exception as e:
+        print(f"❌ Error obteniendo estadísticas: {e}")
+
+async def search_multimodal_memory(llm: LLMWithMCPTools, query: str):
+    """Busca en memoria multimodal"""
+    print(f"\n🔍 BUSCANDO EN MEMORIA: '{query}'")
+    print("-" * 40)
+    
+    if not llm.multimodal_memory:
+        print("❌ Memoria multimodal no disponible")
+        return
+    
+    try:
+        user_id = llm.current_user_email or "unknown_user"
+        
+        # Búsqueda semántica
+        results = await llm.multimodal_memory.search_semantic_memories(
+            query=query,
+            user_id=user_id,
+            modalities=["text"],
+            limit=5
+        )
+        
+        if results:
+            print(f"✅ Encontrados {len(results)} resultados:")
+            for i, result in enumerate(results, 1):
+                content = result.get('content', '')[:100] + "..."
+                similarity = result.get('similarity_score', 0)
+                timestamp = result.get('created_at', '')
+                
+                print(f"\n{i}. [{timestamp}] (Relevancia: {similarity:.2f})")
+                print(f"   {content}")
+        else:
+            print("📭 No se encontraron resultados")
+            
+    except Exception as e:
+        print(f"❌ Error en búsqueda: {e}")
+
+async def show_full_system_stats(llm: LLMWithMCPTools, mcp_initialized: bool):
+    """Muestra estadísticas completas del sistema"""
+    print("\n📊 ESTADÍSTICAS COMPLETAS DEL SISTEMA:")
+    print("=" * 50)
+    
+    # Información básica
+    print_debug_info(llm, mcp_initialized)
+    
+    # Estadísticas de memoria multimodal
+    await show_memory_stats(llm)
+    
+    # Herramientas disponibles
+    print("\n🔧 HERRAMIENTAS DISPONIBLES:")
+    print("-" * 30)
+    for tool in llm.available_tools:
+        name = tool.get('name', 'Unknown')
+        desc = tool.get('description', 'Sin descripción')[:50] + "..."
+        print(f"  • {name}: {desc}")
+
+# ✅ PUNTO DE ENTRADA PRINCIPAL
 if __name__ == "__main__":
     """Punto de entrada principal"""
     try:

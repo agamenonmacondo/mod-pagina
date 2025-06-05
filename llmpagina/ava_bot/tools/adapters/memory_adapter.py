@@ -8,6 +8,7 @@ import json
 from PIL import Image
 import sqlite3
 import time
+import platform
 
 # ✅ RUTAS SIMPLIFICADAS Y ROBUSTAS
 current_dir = Path(__file__).parent
@@ -17,12 +18,40 @@ class SQLiteMemoryManager:
     """Sistema de memoria SQLite mejorado - SIN DEPENDENCIA DE JSON"""
     
     def __init__(self):
-        self.db_path = current_dir / "memory.db"
+        self.db_path = self._get_universal_db_path()
         self.images_dir = current_dir / "stored_images"
         self.images_dir.mkdir(exist_ok=True)
         self.init_database()
         print(f"🗃️ SQLiteMemoryManager inicializado. DB: {self.db_path}")
         print(f"🖼️ Directorio de imágenes: {self.images_dir}")
+    
+    def _get_universal_db_path(self) -> Path:
+        """Detecta automáticamente la ruta correcta según el entorno"""
+        
+        # 1. Variable de entorno (máxima prioridad)
+        if db_path_env := os.getenv("MEMORY_DB_PATH"):
+            return Path(db_path_env)
+        
+        # 2. Detectar Azure/Cloud
+        if self._is_cloud_environment():
+            # Usar directorio temporal writable
+            return Path("/tmp/ava_memory.db")
+        
+        # 3. Desarrollo local (tu caso actual)
+        current_dir = Path(__file__).parent
+        return current_dir / "memory.db"
+    
+    def _is_cloud_environment(self) -> bool:
+        """Detecta si está en cloud/contenedor"""
+        return (
+            # Azure indicators
+            os.getenv("WEBSITE_SITE_NAME") or
+            os.getenv("FUNCTIONS_WORKER_RUNTIME") or
+            # Docker indicators
+            os.path.exists("/.dockerenv") or
+            # Linux + /app directory (contenedor típico)
+            (platform.system() == "Linux" and os.path.exists("/app"))
+        )
     
     def init_database(self):
         """Inicializar la base de datos - SINTAXIS CORREGIDA"""

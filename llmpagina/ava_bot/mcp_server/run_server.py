@@ -56,10 +56,10 @@ class SilentAdapterLoader:
             ("image", "tools.adapters.image_adapter", "ImageAdapter"),
             ("image_display", "tools.adapters.image_display_adapter", "ImageDisplayAdapter"),
             ("file_manager", "tools.adapters.file_adapter", "FileManagerAdapter"),
-            # ✅ AGREGAR VISION ADAPTER
             ("vision", "tools.adapters.vision_adapter", "VisionAdapter"),
-            # ✅ AGREGAR PLAYWRIGHT ADAPTER
-            ("playwright", "tools.adapters.playwright_adapter", "PlaywrightAdapter")
+            ("playwright", "tools.adapters.playwright_adapter", "PlaywrightAdapter"),
+            # ✅ CAMBIAR A MULTIMODAL MEMORY ADAPTER REAL
+            ("multimodal_memory", "tools.adapters.multimodal_memory_adapter", "MultimodalMemoryAdapter")
         ]
         
     def load_all_adapters(self):
@@ -308,6 +308,91 @@ class CleanMCPServer:
                 }
                 input_schema["required"] = ["user_id", "action"]
             
+            # ✅ ESQUEMA PARA MULTIMODAL MEMORY REAL
+            elif name == "multimodal_memory":
+                input_schema["properties"] = {
+                    "action": {
+                        "type": "string",
+                        "enum": [
+                            "store_text_memory", "store_image_memory", 
+                            "search_semantic_memories", "get_recent_multimodal_context",
+                            "find_related_images", "get_user_stats",
+                            "create_semantic_link", "validate_system"
+                        ],
+                        "description": "Acción de memoria multimodal a realizar"
+                    },
+                    "user_id": {
+                        "type": "string",
+                        "description": "ID del usuario",
+                        "required": True
+                    },
+                    "content": {
+                        "type": "string",
+                        "description": "Contenido de texto para almacenar"
+                    },
+                    "image_path": {
+                        "type": "string",
+                        "description": "Ruta de la imagen"
+                    },
+                    "description": {
+                        "type": "string",
+                        "description": "Descripción de la imagen"
+                    },
+                    "query": {
+                        "type": "string",
+                        "description": "Query para búsqueda semántica"
+                    },
+                    "modalities": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "Modalidades: ['text', 'image']",
+                        "default": ["text"]
+                    },
+                    "limit": {
+                        "type": "integer",
+                        "description": "Límite de resultados",
+                        "default": 5
+                    },
+                    "session_id": {
+                        "type": "string",
+                        "description": "ID de sesión"
+                    },
+                    "days": {
+                        "type": "integer",
+                        "description": "Días hacia atrás",
+                        "default": 7
+                    },
+                    "text_query": {
+                        "type": "string",
+                        "description": "Query para buscar imágenes relacionadas"
+                    },
+                    "memory_id_1": {
+                        "type": "integer",
+                        "description": "ID de primera memoria para enlace"
+                    },
+                    "memory_id_2": {
+                        "type": "integer", 
+                        "description": "ID de segunda memoria para enlace"
+                    },
+                    "memory_type_1": {
+                        "type": "string",
+                        "description": "Tipo de primera memoria"
+                    },
+                    "memory_type_2": {
+                        "type": "string",
+                        "description": "Tipo de segunda memoria"
+                    },
+                    "similarity_score": {
+                        "type": "number",
+                        "description": "Puntuación de similitud"
+                    },
+                    "link_type": {
+                        "type": "string",
+                        "description": "Tipo de enlace semántico"
+                    }
+                }
+                input_schema["required"] = ["action", "user_id"]
+
             tools.append({
                 "name": name,
                 "description": description,
@@ -602,6 +687,15 @@ def get_test_cases():
                 "url": "https://httpbin.org/html"
             },
             'description': 'Automatización web con Playwright'
+        },
+        
+        # ✅ CAMBIAR TEST CASE PARA MULTIMODAL MEMORY REAL
+        'multimodal_memory': {
+            'basic': {
+                "action": "validate_system",
+                "user_id": "test_user@email.com"
+            },
+            'description': 'Validación del sistema de memoria multimodal real'
         }
     }
 
@@ -682,7 +776,9 @@ async def test_all_tools_comprehensive():
                         # ✅ INDICADORES PARA VISION
                         'vision': ['imagen', 'análisis', 'llama', 'scout', 'vision', 'describe', 'elementos'],
                         # ✅ INDICADORES PARA PLAYWRIGHT
-                        'playwright': ['página', 'navegación', 'título', 'información', 'estadísticas', 'enlaces', 'cargada']
+                        'playwright': ['página', 'navegación', 'título', 'información', 'estadísticas', 'enlaces', 'cargada'],
+                        # ✅ INDICADORES PARA MULTIMODAL MEMORY REAL
+                        'multimodal_memory': ['memoria', 'multimodal', 'texto', 'imagen', 'embedding', 'validación', 'sistema', 'directorio', 'base de datos']
                     }
                     
                     error_indicators = ['error', 'fallo', 'no se pudo', 'failed', 'exception']
