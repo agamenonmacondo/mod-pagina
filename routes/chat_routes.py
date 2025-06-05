@@ -17,37 +17,41 @@ ava_process = None
 ava_bot_path = None
 
 def find_ava_script():
-    """Encuentra el script de AVA en la ruta correcta"""
-    base_path = Path(__file__).parent.parent
+    """Encuentra el script de AVA con múltiples métodos"""
     
-    print("🔍 BÚSQUEDA DE ava_bot.py:")
-    print(f"📁 Base path: {base_path}")
+    # Método 1: Desde el directorio de trabajo actual (donde se ejecuta app.py)
+    method1_path = Path.cwd() / 'llmpagina' / 'ava_bot' / 'ava_bot.py'
     
-    # ✅ RUTA EXACTA CONFIRMADA
-    script_path = base_path / 'llmpagina' / 'ava_bot' / 'ava_bot.py'
+    # Método 2: Desde routes/ navegando hacia arriba
+    method2_path = Path(__file__).parent.parent / 'llmpagina' / 'ava_bot' / 'ava_bot.py'
     
-    print(f"🎯 Ruta exacta: {script_path}")
-    print(f"   Existe: {'✅' if script_path.exists() else '❌'}")
+    # Método 3: Usando variable de entorno PYTHONPATH si está configurada
+    pythonpath = os.environ.get('PYTHONPATH', '')
+    method3_path = None
+    if pythonpath:
+        for path in pythonpath.split(os.pathsep):
+            potential_path = Path(path) / 'ava_bot.py'
+            if potential_path.exists():
+                method3_path = potential_path
+                break
     
-    if script_path.exists():
-        print(f"   Tamaño: {script_path.stat().st_size} bytes")
-        logger.info(f"✅ Script AVA encontrado: {script_path}")
-        return script_path.parent, script_path
-    else:
-        # ✅ BÚSQUEDA ALTERNATIVA SI NO ESTÁ EN LA RUTA PRINCIPAL
-        alternative_locations = [
-            base_path / 'ava_bot' / 'ava_bot.py',
-            base_path / 'ava_bot.py'
-        ]
-        
-        print("🔍 Búsqueda en ubicaciones alternativas:")
-        for alt_path in alternative_locations:
-            print(f"   {alt_path}: {'✅' if alt_path.exists() else '❌'}")
-            if alt_path.exists():
-                return alt_path.parent, alt_path
+    print("🔍 MÉTODOS DE BÚSQUEDA:")
+    print(f"   Método 1 (cwd): {method1_path} {'✅' if method1_path.exists() else '❌'}")
+    print(f"   Método 2 (relative): {method2_path} {'✅' if method2_path.exists() else '❌'}")
+    if method3_path:
+        print(f"   Método 3 (PYTHONPATH): {method3_path} {'✅' if method3_path.exists() else '❌'}")
     
-    print("❌ Script ava_bot.py no encontrado")
-    logger.error("❌ Script ava_bot.py no encontrado")
+    # Probar métodos en orden de preferencia
+    for method_name, script_path in [
+        ("método 1 (cwd)", method1_path),
+        ("método 2 (relative)", method2_path),
+        ("método 3 (PYTHONPATH)", method3_path)
+    ]:
+        if script_path and script_path.exists():
+            print(f"✅ ava_bot.py encontrado con {method_name}: {script_path}")
+            return script_path.parent, script_path
+    
+    print("❌ ava_bot.py no encontrado con ningún método")
     return None, None
 
 def get_python_executable():
