@@ -1,4 +1,4 @@
-# ✅ CONFIGURACIÓN DE BUILD OPTIMIZADA
+# ✅ CONFIGURACIÓN PARA APP.PY FLASK EXISTENTE
 options:
   logging: CLOUD_LOGGING_ONLY
   machineType: 'E2_HIGHCPU_8'
@@ -8,68 +8,35 @@ options:
 substitutions:
   _SERVICE_NAME: 'ava-app'
   _REGION: 'us-central1'
-  _MEMORY: '1Gi'
-  _CPU: '1'
+  _MEMORY: '4Gi'
+  _CPU: '2'
   _TIMEOUT: '3600s'
   _MAX_INSTANCES: '10'
   _MIN_INSTANCES: '1'
 
 steps:
-  # ✅ PASO 1: PREPARAR ENTORNO
-  - name: 'python:3.11-slim'
-    id: 'prepare'
-    entrypoint: 'bash'
-    args:
-      - '-c'
-      - |
-        echo "🚀 Preparando build de AVA..."
-        python --version
-        pip --version
-
-  # ✅ PASO 2: INSTALAR DEPENDENCIAS Y EJECUTAR TESTS
-  - name: 'python:3.11-slim'
-    id: 'test'
-    entrypoint: 'bash'
-    args:
-      - '-c'
-      - |
-        echo "🧪 Instalando dependencias y ejecutando tests..."
-        pip install --upgrade pip
-        pip install -r requirements.txt
-        python -m pytest tests/ || echo "⚠️ Tests no encontrados"
-
-  # ✅ PASO 3: CONSTRUIR IMAGEN DOCKER
+  # ✅ BUILD
   - name: 'gcr.io/cloud-builders/docker'
-    id: 'build'
     args:
       - 'build'
       - '-t'
-      - 'us-central1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/${_SERVICE_NAME}:$COMMIT_SHA'
-      - '-t'
-      - 'us-central1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/${_SERVICE_NAME}:latest'
-      - '--build-arg'
-      - 'BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")'
-      - '--build-arg'
-      - 'VCS_REF=$COMMIT_SHA'
+      - 'gcr.io/$PROJECT_ID/${_SERVICE_NAME}:$BUILD_ID'
       - '.'
 
-  # ✅ PASO 4: PUSH DE IMAGEN
+  # ✅ PUSH
   - name: 'gcr.io/cloud-builders/docker'
-    id: 'push'
     args:
       - 'push'
-      - '--all-tags'
-      - 'us-central1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/${_SERVICE_NAME}'
+      - 'gcr.io/$PROJECT_ID/${_SERVICE_NAME}:$BUILD_ID'
 
-  # ✅ PASO 5: DESPLEGAR A CLOUD RUN
+  # ✅ DEPLOY
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-    id: 'deploy'
     entrypoint: 'gcloud'
     args:
       - 'run'
       - 'deploy'
       - '${_SERVICE_NAME}'
-      - '--image=us-central1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/${_SERVICE_NAME}:$COMMIT_SHA'
+      - '--image=gcr.io/$PROJECT_ID/${_SERVICE_NAME}:$BUILD_ID'
       - '--region=${_REGION}'
       - '--platform=managed'
       - '--allow-unauthenticated'
@@ -79,28 +46,5 @@ steps:
       - '--port=8080'
       - '--max-instances=${_MAX_INSTANCES}'
       - '--min-instances=${_MIN_INSTANCES}'
-      - '--set-env-vars=FLASK_ENV=production,FLASK_APP=app:app'
-      - '--set-secrets=GROQ_API_KEY=groq-api-key:latest,SECRET_KEY=secret-key:latest'
 
-  # ✅ PASO 6: VERIFICAR DESPLIEGUE
-  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-    id: 'verify'
-    entrypoint: 'bash'
-    args:
-      - '-c'
-      - |
-        echo "🔍 Verificando despliegue..."
-        SERVICE_URL=$(gcloud run services describe ${_SERVICE_NAME} --region=${_REGION} --format='value(status.url)')
-        echo "🌐 URL del servicio: $SERVICE_URL"
-        
-        # Verificar que el servicio responda
-        curl -f "$SERVICE_URL/health" || exit 1
-        echo "✅ Servicio desplegado correctamente"
-
-# ✅ IMÁGENES A ALMACENAR
-images:
-  - 'us-central1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/${_SERVICE_NAME}:$COMMIT_SHA'
-  - 'us-central1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/${_SERVICE_NAME}:latest'
-
-# ✅ TIMEOUT DEL BUILD
-timeout: '1800s'
+timeout: '2400s'

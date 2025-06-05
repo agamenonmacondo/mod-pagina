@@ -1,13 +1,14 @@
 {
   "image_filename": "novedades_en_inteligencia_artificial_y_tecnología.png",
   "article_title": "Novedades en Inteligencia Artificial y Tecnología",
-  "article_file": "novedades_en_inteligencia_artificial_y_tecnología_20250604.json",
-  "prompt": "Here is the prompt:\n\n\"Create a visually stunning and conceptual image that captures the essence of the article 'Novedades en Inteligencia Artificial y Tecnología'. The image should depict a futuristic cityscape with sleek skyscrapers, neon lights, and AI-powered robots moving about. In the center, a humanoid robot with glowing blue eyes and a subtle smile, surrounded by a halo of light, represents the advancements in AI. The robot's face should be lit by a subtle gradient of blue and purple hues, symbolizing intelligence and innovation.\n\nIn the background, a cityscape with towering skyscrapers and flying drones should be visible, representing the impact of technology on our daily lives. The image should have a bold and vibrant color palette, with shades of blue, purple, and silver, evoking a sense of modernity and futurism.\n\nUse a mix of close-up shots and wide-angle views to create a sense of depth and scale. The image should be professionally styled, with a focus on clean lines, simple shapes, and minimal textures. The overall mood should be one of excitement, innovation, and possibility, capturing the essence of the article's theme of AI and technology transforming our world.\"",
+  "article_file": "novedades_en_inteligencia_artificial_y_tecnología_20250605.json",
+  "prompt": "Here is the detailed prompt for generating an image:\n\n\"Create a conceptually stunning image that captures the essence of the article 'Novedades en Inteligencia Artificial y Tecnología'. The image should be visually striking, with a professional, commercial, and modern aesthetic. Incorporate symbolic elements related to AI, such as circuits, neurons, or code, subtly woven into the composition.\n\nThe primary elements of the image should include:\n\n* A human figure (faceless or with a blurred face) surrounded by a halo of light, symbolizing the connection between humans and AI.\n* A futuristic cityscape or a sprawling metropolis in the background, representing the rapid advancements in technology and AI.\n* A series of interconnected nodes or circuits radiating from the human figure, representing the integration of AI into our daily lives.\n* A subtle glow or luminescence emanating from the nodes, signifying the innovative and revolutionary nature of the AI technology.\n* A color palette that is predominantly blue and purple, with accents of bright colors to represent the excitement and novelty of these advancements.\n* A close-up composition, focusing on the human figure and the nodes, with a shallow depth of field to emphasize the importance of the subject.\n* A photographic style that is detailed, high-contrast, and textured, with a mix of smooth and rough textures to create visual interest.\n* A sense of movement and energy, conveying the dynamism and forward-thinking nature of the article.\n\nThe image should be creative, thought-provoking, and visually appealing, capturing the imagination of the viewer and encouraging them to explore the world of AI and technology.\"",
   "model": "FLUX.1-schnell-Free",
-  "generated_at": "2025-06-04T23:02:23.928144",
+  "generated_at": "2025-06-05T16:07:26.363728",
   "keywords": [
     "inteligencia artificial",
     "tecnología",
+    "avance",
     "innovación"
   ]
 }

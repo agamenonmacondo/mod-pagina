@@ -1,5 +1,40 @@
 [
   {
+    "run_id": "novedades_en_inteligencia_artificial_y_tecnología_20250605",
+    "article": {
+      "title": "Novedades en Inteligencia Artificial y Tecnología",
+      "meta_description": "Últimas noticias sobre el avance en inteligencia artificial y tecnología",
+      "keywords": [
+        "inteligencia artificial",
+        "tecnología",
+        "avance",
+        "innovación"
+      ],
+      "content": "La inteligencia artificial (IA) ha sido un tema central en los últimos tiempos, y su impacto en nuestra vida diaria es cada vez más significativo. Recientemente, se han dado a conocer varias novedades en este campo que han generado gran interés y expectación.\n\nUna de las noticias más destacadas es el lanzamiento de un nuevo modelo de IA capaz de aprender y mejorar sin la necesidad de ser programado explícitamente. Esta tecnología, desarrollada por un equipo de investigadores de la Universidad de Stanford, tiene el potencial de revolucionar la forma en que se desarrollan los sistemas de IA en el futuro.\n\nAdemás, se han dado a conocer avances significativos en el campo de la visión por computadora, que permiten a los sistemas inteligentes reconocer y analizar imágenes de manera más efectiva. Esto tiene implicaciones importantes en campos como la medicina, la seguridad y la agricultura.\n\nEn el campo de la tecnología, se han dado a conocer varias novedades que están cambiando la forma en que vivimos y trabajamos. Por ejemplo, se han lanzado nuevos dispositivos electrónicos que permiten a los usuarios controlar sus hogares y dispositivos de manera remota utilizando solo su voz.\n\nEn resumen, la inteligencia artificial y la tecnología están avanzando a un ritmo rápido y están cambiando la forma en que vivimos y trabajamos. Estas novedades tienen el potencial de mejorar significativamente nuestra calidad de vida y abrir nuevas oportunidades para el futuro.\n\nReferencias:\n- [1] Stanford University. (2022). New AI Model Can Learn Without Being Programmed. Retrieved from <https://news.stanford.edu/2022/02/15/new-ai-model-can-learn-without-being-programmed/>\n- [2] IEEE Spectrum. (2022). AI Advances in Computer Vision. Retrieved from <https://spectrum.ieee.org/artificial-intelligence/ai-advances-in-computer-vision>\n- [3] The Verge. (2022). New smart home devices let you control your home with just your voice. Retrieved from <https://www.theverge.com/2022/3/15/22984444/smart-home-devices-voice-control-amazon-alexa-google-assistant>",
+      "generated_at": "2025-06-05T16:07:17.183973",
+      "source_topics_count": 3,
+      "source_topics": [
+        "Microsoft Offers to Boost European Governments’ Cybersecurity for Free - Insurance Journal",
+        "Artificial intelligence for streamflow prediction in river basins: a use case in Mar Menor - Nature",
+        "Prediction: 2 Artificial Intelligence (AI) Stocks That Will Be Worth More Than Palantir Within 1 Year - The Motley Fool"
+      ],
+      "model_used": "llama3-70b-8192",
+      "filename": "novedades_en_inteligencia_artificial_y_tecnología_20250605.json",
+      "run_id": "novedades_en_inteligencia_artificial_y_tecnología_20250605"
+    },
+    "image": {
+      "original_path": "",
+      "web_path": "/static/seo_images/novedades_en_inteligencia_artificial_y_tecnología.png",
+      "article_title": "Novedades en Inteligencia Artificial y Tecnología",
+      "timestamp": "2025-06-05T16:07:27.003072",
+      "exists": true,
+      "is_fallback": false,
+      "source": "metadata_title",
+      "filename": "novedades_en_inteligencia_artificial_y_tecnología.png"
+    },
+    "timestamp": "2025-06-05T16:07:17.183973"
+  },
+  {
     "run_id": "la_inteligencia_artificial_revoluciona_la_ciberseg_20250604",
     "article": {
       "title": "La Inteligencia Artificial Revoluciona la Ciberseguridad y la Predicción de Caudales en Ríos",
@@ -196,53 +231,5 @@
       "filename": "avances_en_inteligencia_artificial.png"
     },
     "timestamp": "2025-06-04T04:17:09.848330"
-  },
-  {
-    "run_id": "novedades_en_inteligencia_artificial_y_tecnología_20250604",
-    "article": {
-      "title": "Novedades en Inteligencia Artificial y Tecnología",
-      "meta_description": "Descubre las últimas novedades en inteligencia artificial y tecnología, desde avances en aprendizaje automático hasta innovaciones en dispositivos electrónicos.",
-      "keywords": [
-        "inteligencia artificial",
-        "tecnología",
-        "aprendizaje automático",
-        "dispositivos electrónicos"
-      ],
-      "content": "En los últimos meses, hemos visto un gran avance en el campo de la inteligencia artificial y la tecnología. Uno de los logros más destacados es el desarrollo de un algoritmo de aprendizaje automático que puede aprender a reconocer patrones en grandes cantidades de datos sin necesidad de ser programado previamente. Esto abre la puerta a la creación de sistemas más inteligentes y eficientes en various áreas, como la medicina y la seguridad.\n\nAdemás, se han lanzado nuevos dispositivos electrónicos que incorporan tecnologías de vanguardia, como teléfonos con cámaras de realidad aumentada y relojes inteligentes que pueden monitorear el ritmo cardíaco y la actividad física. Estos dispositivos están revolucionando la forma en que vivimos y interactuamos con el mundo.\n\nOtra novedad importante es el desarrollo de un sistema de reconocimiento facial que puede identificar a las personas con una precisión del 99,9%. Esto puede ser utilizado en various aplicaciones, como la seguridad y la identificación de personas.\n\nEn resumen, los últimos avances en inteligencia artificial y tecnología están revolucionando la forma en que vivimos y interactuamos con el mundo. Estos avances pueden tener un gran impacto en various áreas y cambiar la forma en que vivimos en el futuro.",
-      "references": [
-        {
-          "title": "Algoritmo de aprendizaje automático",
-          "url": "https://www.scientificamerican.com/article/ai-algorithm-learns-to-recognize-patterns-without-being-programmed/"
-        },
-        {
-          "title": "Dispositivos electrónicos con tecnologías de vanguardia",
-          "url": "https://www.theverge.com/2022/3/15/22984431/samsung-galaxy-s22-ultra-review"
-        },
-        {
-          "title": "Sistema de reconocimiento facial",
-          "url": "https://www.engadget.com/2022/02/22/facial-recognition-ai-99-9-accuracy/"
-        }
-      ],
-      "generated_at": "2025-06-04T04:07:04.928961",
-      "source_topics_count": 2,
-      "source_topics": [
-        "Artificial intelligence for streamflow prediction in river basins: a use case in Mar Menor - Nature",
-        "Google working on AI email tool that can ‘answer in your style’ - The Guardian"
-      ],
-      "model_used": "llama3-70b-8192",
-      "filename": "novedades_en_inteligencia_artificial_y_tecnología_20250604.json",
-      "run_id": "novedades_en_inteligencia_artificial_y_tecnología_20250604"
-    },
-    "image": {
-      "original_path": "",
-      "web_path": "/static/seo_images/novedades_en_inteligencia_artificial_y_tecnología.png",
-      "article_title": "Novedades en Inteligencia Artificial y Tecnología",
-      "timestamp": "2025-06-04T04:07:16.180233",
-      "exists": true,
-      "is_fallback": false,
-      "source": "metadata_title",
-      "filename": "novedades_en_inteligencia_artificial_y_tecnología.png"
-    },
-    "timestamp": "2025-06-04T04:07:04.928961"
   }
 ]
