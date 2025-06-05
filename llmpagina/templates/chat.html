@@ -16,3 +16,66 @@
     }
 }
 </style>
+
+<div class="chat-input">
+    <!-- ✅ NUEVO: Controles de imagen -->
+    <div class="image-controls">
+        <button type="button" id="cameraBtn" class="control-button" title="Tomar foto">
+            <i class="fas fa-camera"></i>
+        </button>
+        <button type="button" id="fileBtn" class="control-button" title="Subir imagen">
+            <i class="fas fa-image"></i>
+        </button>
+    </div>
+    
+    <!-- Input de archivo oculto -->
+    <input type="file" id="imageFileInput" accept="image/*" style="display: none;">
+    
+    <!-- Input de texto existente -->
+    <input type="text" id="chatInput" placeholder="Escribe tu mensaje..." autocomplete="off">
+    
+    <button id="sendButton" type="button">
+        <i class="fas fa-paper-plane"></i>
+    </button>
+</div>
+
+<!-- ✅ NUEVO: Modal para cámara -->
+<div id="cameraModal" class="camera-modal" style="display: none;">
+    <div class="camera-modal-content">
+        <div class="camera-header">
+            <h3>Tomar Foto</h3>
+            <button id="closeCameraBtn" class="close-camera">×</button>
+        </div>
+        
+        <div class="camera-container">
+            <video id="cameraVideo" autoplay playsinline></video>
+            <canvas id="cameraCanvas" style="display: none;"></canvas>
+        </div>
+        
+        <div class="camera-controls">
+            <button id="captureBtn" class="capture-button">
+                <i class="fas fa-camera"></i> Tomar Foto
+            </button>
+            <button id="retakeBtn" class="retake-button" style="display: none;">
+                <i class="fas fa-redo"></i> Otra Foto
+            </button>
+            <button id="sendPhotoBtn" class="send-photo-button" style="display: none;">
+                <i class="fas fa-paper-plane"></i> Enviar a AVA
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ✅ NUEVO: Preview de imagen seleccionada -->
+<div id="imagePreview" class="image-preview" style="display: none;">
+    <div class="preview-header">
+        <span>Imagen seleccionada</span>
+        <button id="removeImageBtn">×</button>
+    </div>
+    <img id="previewImg" src="" alt="Preview">
+    <div class="preview-actions">
+        <button id="sendImageBtn" class="send-image-btn">
+            <i class="fas fa-paper-plane"></i> Enviar a AVA
+        </button>
+    </div>
+</div>

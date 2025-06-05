@@ -147,6 +147,7 @@
     border-top: 2px solid var(--primary-color);
     padding: 15px;
     background-color: var(--chat-bg);
+    gap: 8px; /* Espacio entre elementos */
 }
 
 .chat-input input {
@@ -188,6 +189,36 @@
 
 .chat-input button i {
     font-size: 18px;
+}
+
+.upload-btn {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 48px;
+    height: 48px;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    position: relative;
+}
+
+.upload-btn:hover {
+    background-color: #218838;
+    transform: scale(1.05);
+}
+
+.upload-btn i {
+    font-size: 18px;
+}
+
+/* Ocultar input file */
+#imageInput {
+    display: none;
 }
 
 /* Estilos para los mensajes en la conversación */
@@ -474,7 +505,7 @@
 /* ✅ AJUSTES ESPECÍFICOS PARA MENSAJES DEL ASISTENTE */
 .assistant .message-content {
     /* ✅ PERMITIR MÁS ANCHO PARA IMÁGENES */
-    max-width: 320px;
+    max-width: 600px;
     width: auto;
 }
 
@@ -586,6 +617,74 @@
     }
 }
 
+/* ✅ ESTILOS PARA IMÁGENES DEL USUARIO */
+.message.user .image-container {
+    margin-top: 8px;
+    position: relative;
+    display: inline-block;
+    max-width: 250px;
+    width: 100%;
+}
+
+.message.user .image-container img {
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    max-height: 200px;
+    object-fit: cover;
+    border-radius: 12px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    transition: all 0.2s ease;
+    display: block;
+}
+
+.message.user .image-container img:hover {
+    transform: scale(1.02);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.3);
+}
+
+.message.user .image-container .image-controls {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    display: flex;
+    gap: 6px;
+    opacity: 0.9;
+    transition: opacity 0.2s ease;
+}
+
+.message.user .image-container .control-btn {
+    background: rgba(255, 215, 0, 0.9);
+    color: #1c1c1c;
+    border: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    transition: all 0.2s ease;
+}
+
+.message.user .image-container .image-info {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(transparent, rgba(255,215,0,0.8));
+    color: #1c1c1c;
+    font-size: 10px;
+    padding: 8px 6px 4px 6px;
+    border-radius: 0 0 12px 12px;
+    text-align: center;
+    opacity: 0.9;
+    font-weight: bold;
+}
+
 /* ✅ ANIMACIONES */
 @keyframes modalFadeIn {
     from { 
@@ -670,8 +769,8 @@
     border-radius: 18px 18px 18px 4px;
     padding: 12px 16px;
     /* ✅ HACER EL RECUADRO MÁS GRANDE */
-    max-width: 320px;
-    min-width: 200px;
+    max-width:580px;
+    min-width: 500px;
     width: fit-content;
     margin-left: 0;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
@@ -718,10 +817,6 @@
     gap: 6px;
     opacity: 0.9;
     transition: opacity 0.2s ease;
-}
-
-.message.assistant .image-container .image-controls:hover {
-    opacity: 1;
 }
 
 .message.assistant .image-container .control-btn {
@@ -814,4 +909,72 @@
         height: 24px;
         font-size: 10px;
     }
+}
+
+/* ✅ ESTILOS PARA IMÁGENES DEL USUARIO */
+.message.user .image-container {
+    margin-top: 8px;
+    position: relative;
+    display: inline-block;
+    max-width: 250px;
+    width: 100%;
+}
+
+.message.user .image-container img {
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    max-height: 200px;
+    object-fit: cover;
+    border-radius: 12px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    transition: all 0.2s ease;
+    display: block;
+}
+
+.message.user .image-container img:hover {
+    transform: scale(1.02);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.3);
+}
+
+.message.user .image-container .image-controls {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    display: flex;
+    gap: 6px;
+    opacity: 0.9;
+    transition: opacity 0.2s ease;
+}
+
+.message user .image-container .control-btn {
+    background: rgba(255, 215, 0, 0.9);
+    color: #1c1c1c;
+    border: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    transition: all 0.2s ease;
+}
+
+.message.user .image-container .image-info {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(transparent, rgba(255,215,0,0.8));
+    color: #1c1c1c;
+    font-size: 10px;
+    padding: 8px 6px 4px 6px;
+    border-radius: 0 0 12px 12px;
+    text-align: center;
+    opacity: 0.9;
+    font-weight: bold;
 }

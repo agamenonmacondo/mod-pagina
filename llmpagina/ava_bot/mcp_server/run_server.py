@@ -33,13 +33,6 @@ for path in paths_to_add:
     if path not in sys.path:
         sys.path.insert(0, path)
 
-# ✅ MOVER LOS IMPORTS AQUÍ - DESPUÉS DE CONFIGURAR PATHS
-try:
-    from tools.adapters.file_adapter import FileManagerAdapter
-except ImportError:
-    FileManagerAdapter = None
-    print("⚠️ FileManagerAdapter no disponible", file=sys.stderr)
-
 # LOGGING MEJORADO - SOLO STDERR
 def safe_log(message: str, level: str = "INFO"):
     """Log seguro que SOLO va a stderr - NUNCA a stdout"""
@@ -62,8 +55,11 @@ class SilentAdapterLoader:
             ("meet", "tools.adapters.meet_adapter", "MeetAdapter"),
             ("image", "tools.adapters.image_adapter", "ImageAdapter"),
             ("image_display", "tools.adapters.image_display_adapter", "ImageDisplayAdapter"),
-            # ✅ AGREGAR FILE_MANAGER A LA LISTA
-            ("file_manager", "tools.adapters.file_adapter", "FileManagerAdapter")
+            ("file_manager", "tools.adapters.file_adapter", "FileManagerAdapter"),
+            # ✅ AGREGAR VISION ADAPTER
+            ("vision", "tools.adapters.vision_adapter", "VisionAdapter"),
+            # ✅ AGREGAR PLAYWRIGHT ADAPTER
+            ("playwright", "tools.adapters.playwright_adapter", "PlaywrightAdapter")
         ]
         
     def load_all_adapters(self):
@@ -116,9 +112,9 @@ class SilentAdapterLoader:
                     finally:
                         sys.stdout = original_stdout
                     
-                    # ✅ VERIFICAR MÉTODOS PARA FILE_MANAGER
+                    # Verificar métodos necesarios
                     if name == "file_manager":
-                        # FileManager usa método 'execute' en lugar de 'process'
+                        # FileManager usa método 'execute'
                         required_methods = ['execute']
                     else:
                         required_methods = ['process', 'execute']
@@ -171,8 +167,77 @@ class CleanMCPServer:
                 "required": []
             }
             
-            # ✅ AGREGAR ESQUEMA PARA FILE_MANAGER
-            if name == "file_manager":
+            # ✅ ESQUEMAS ESPECÍFICOS PARA CADA HERRAMIENTA
+            if name == "vision":
+                input_schema["properties"] = {
+                    "action": {
+                        "type": "string",
+                        "enum": ["analyze_image", "describe_image", "ocr_text", "test_analyze"],
+                        "description": "Tipo de análisis visual a realizar"
+                    },
+                    "image_path": {
+                        "type": "string",
+                        "description": "Ruta completa de la imagen a analizar"
+                    },
+                    "user_question": {
+                        "type": "string",
+                        "description": "Pregunta específica sobre la imagen"
+                    },
+                    "detail_level": {
+                        "type": "string",
+                        "enum": ["low", "high", "auto"],
+                        "description": "Nivel de detalle del análisis",
+                        "default": "high"
+                    }
+                }
+                input_schema["required"] = ["action", "image_path"]
+                
+            # ✅ ESQUEMA PARA PLAYWRIGHT ADAPTER
+            elif name == "playwright":
+                input_schema["properties"] = {
+                    "action": {
+                        "type": "string",
+                        "enum": [
+                            "navigate",
+                            "extract_text", 
+                            "extract_html",
+                            "extract_links",
+                            "execute_js",
+                            "take_screenshot",
+                            "get_page_info"
+                        ],
+                        "description": "Acción de automatización web a realizar"
+                    },
+                    "url": {
+                        "type": "string",
+                        "description": "URL de destino para navegación"
+                    },
+                    "selector": {
+                        "type": "string",
+                        "description": "Selector CSS del elemento objetivo (opcional)"
+                    },
+                    "javascript": {
+                        "type": "string",
+                        "description": "Código JavaScript a ejecutar en la página"
+                    },
+                    "screenshot_name": {
+                        "type": "string",
+                        "description": "Nombre del archivo de captura"
+                    },
+                    "full_page": {
+                        "type": "boolean",
+                        "default": True,
+                        "description": "Captura de página completa"
+                    },
+                    "timeout": {
+                        "type": "integer",
+                        "default": 30000,
+                        "description": "Timeout en milisegundos"
+                    }
+                }
+                input_schema["required"] = ["action"]
+                
+            elif name == "file_manager":
                 input_schema["properties"] = {
                     "action": {
                         "type": "string",
@@ -212,6 +277,7 @@ class CleanMCPServer:
                     "to": {"type": "string", "description": "Recipient email"},
                     "subject": {"type": "string", "description": "Email subject"},
                     "body": {"type": "string", "description": "Email body"},
+                    "send_latest_image": {"type": "boolean", "description": "Send latest generated image"},
                     "attachment_data": {"type": "object", "description": "Attachment data from file_manager"}
                 }
                 input_schema["required"] = ["to", "subject", "body"]
@@ -443,22 +509,10 @@ class CleanMCPServer:
         finally:
             safe_log("🏁 Server shutting down")
 
-async def test_all_tools_comprehensive():
-    """Test completo de todas las herramientas disponibles"""
-    safe_log("🧪 INICIANDO TEST COMPLETO DE HERRAMIENTAS...")
-    
-    server = CleanMCPServer()
-    server.initialize()
-    
-    if not server.initialized:
-        safe_log("❌ ERROR: Servidor no se pudo inicializar")
-        return False
-    
-    tools = server.get_available_tools()
-    safe_log(f"📊 Probando {len(tools)} herramientas...")
-    
-    # ✅ TEST CASES ESPECÍFICOS PARA CADA HERRAMIENTA
-    test_cases = {
+# ✅ TEST CASES ACTUALIZADOS PARA INCLUIR PLAYWRIGHT
+def get_test_cases():
+    """Casos de prueba para todas las herramientas incluyendo playwright"""
+    return {
         'memory': {
             'basic': {
                 "user_id": "test_user",
@@ -471,7 +525,7 @@ async def test_all_tools_comprehensive():
         'calendar': {
             'basic': {
                 "summary": "Test Event",
-                "start_time": "2025-06-02T15:00:00",
+                "start_time": "2025-06-05T15:00:00",
                 "duration_hours": 1,
                 "description": "Test calendar event"
             },
@@ -498,7 +552,7 @@ async def test_all_tools_comprehensive():
         'meet': {
             'basic': {
                 "summary": "Test Meeting",
-                "start_time": "2025-06-02T16:00:00",
+                "start_time": "2025-06-05T16:00:00",
                 "duration_hours": 1,
                 "attendees": "test@example.com"
             },
@@ -528,9 +582,44 @@ async def test_all_tools_comprehensive():
                 "limit": 5
             },
             'description': 'Listar archivos'
+        },
+        
+        # ✅ AGREGAR TEST CASE PARA VISION
+        'vision': {
+            'basic': {
+                "action": "test_analyze",
+                "image_path": r"D:\ComfyUI_windows_portable\ComfyUI\output\ComfyUI_00137_.png",
+                "user_question": "¿Qué puedes ver en esta imagen?",
+                "detail_level": "high"
+            },
+            'description': 'Análisis de imagen con IA'
+        },
+        
+        # ✅ AGREGAR TEST CASE PARA PLAYWRIGHT
+        'playwright': {
+            'basic': {
+                "action": "get_page_info",
+                "url": "https://httpbin.org/html"
+            },
+            'description': 'Automatización web con Playwright'
         }
     }
+
+async def test_all_tools_comprehensive():
+    """Test completo de todas las herramientas disponibles incluyendo playwright"""
+    safe_log("🧪 INICIANDO TEST COMPLETO DE HERRAMIENTAS...")
     
+    server = CleanMCPServer()
+    server.initialize()
+    
+    if not server.initialized:
+        safe_log("❌ ERROR: Servidor no se pudo inicializar")
+        return False
+    
+    tools = server.get_available_tools()
+    safe_log(f"📊 Probando {len(tools)} herramientas...")
+    
+    test_cases = get_test_cases()
     results = {}
     total_tests = len(test_cases)
     passed_tests = 0
@@ -589,7 +678,11 @@ async def test_all_tools_comprehensive():
                         'meet': ['reunión', 'meet', 'creada', 'solicitud'],
                         'image': ['imagen', 'generada', 'creando'],
                         'image_display': ['imágenes', 'archivos', 'encontradas'],
-                        'file_manager': ['archivos', 'directorio', 'listado']
+                        'file_manager': ['archivos', 'directorio', 'listado'],
+                        # ✅ INDICADORES PARA VISION
+                        'vision': ['imagen', 'análisis', 'llama', 'scout', 'vision', 'describe', 'elementos'],
+                        # ✅ INDICADORES PARA PLAYWRIGHT
+                        'playwright': ['página', 'navegación', 'título', 'información', 'estadísticas', 'enlaces', 'cargada']
                     }
                     
                     error_indicators = ['error', 'fallo', 'no se pudo', 'failed', 'exception']
@@ -671,22 +764,11 @@ async def test_all_tools_comprehensive():
         emoji = status_emojis.get(status, '❓')
         safe_log(f"   {emoji} {status.upper()}: {', '.join(tools)}")
     
-    # Detalles de errores
-    safe_log(f"\n🔍 DETALLES DE PROBLEMAS:")
-    for tool, result in results.items():
-        if result['status'] in ['error', 'exception', 'partial']:
-            safe_log(f"   🔧 {tool}:")
-            safe_log(f"      Status: {result['status']}")
-            if 'error' in result:
-                safe_log(f"      Error: {result['error']}")
-            if 'message' in result:
-                safe_log(f"      Mensaje: {result['message']}")
-    
     safe_log(f"\n{'='*60}")
     
     return passed_tests >= (total_tests * 0.7)  # 70% de éxito mínimo
 
-# ✅ FUNCIÓN MAIN Y PUNTO DE ENTRADA (agregar al final)
+# ✅ FUNCIÓN MAIN Y PUNTO DE ENTRADA
 async def main():
     """Función principal"""
     if len(sys.argv) > 1 and sys.argv[1] == "server":

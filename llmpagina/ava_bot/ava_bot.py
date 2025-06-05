@@ -97,42 +97,63 @@ class JSONUtils:
     
     @staticmethod
     def extract_tool_request(response: str) -> Optional[Dict]:
-        """Extrae solicitud de herramienta del response del LLM"""
+        """Extrae solicitud de herramienta del response del LLM - MEJORADO"""
         try:
-            # Patrones de búsqueda
+            # ✅ DETECTAR MÚLTIPLES FORMATOS JSON
             patterns = [
+                # Formato original esperado
                 r'\{\s*"use_tool"\s*:\s*"[^"]+"\s*,\s*"arguments"\s*:\s*\{[^}]*\}\s*\}',
-                r'\{\s*"use_tool"\s*:\s*"[^"]+"\s*,\s*"arguments"\s*:\s*\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}\s*\}',
-                r'\{"use_tool":\s*"([^"]+)"[^}]*\}'
+                # ✅ NUEVO: Formato que está generando el LLM
+                r'\{\s*"type"\s*:\s*"function"\s*,\s*"name"\s*:\s*"[^"]+"\s*,\s*"parameters"\s*:\s*\{[^}]*\}\s*\}',
+                # Variantes adicionales
+                r'\{\s*"function"\s*:\s*"[^"]+"\s*,\s*"arguments"\s*:\s*\{[^}]*\}\s*\}',
             ]
             
-            for i, pattern in enumerate(patterns, 1):
-                matches = re.findall(pattern, response, re.DOTALL | re.MULTILINE)
+            for pattern in patterns:
+                matches = re.findall(pattern, response, re.DOTALL)
                 if matches:
-                    json_str = matches[-1] if isinstance(matches[-1], str) else matches[-1][0]
+                    json_str = matches[-1]
                     try:
-                        tool_request = json.loads(json_str)
-                        if 'use_tool' in tool_request and 'arguments' in tool_request:
-                            return tool_request
+                        parsed_json = json.loads(json_str)
+                        
+                        # ✅ CONVERTIR FORMATO "type/name/parameters" AL FORMATO ESPERADO
+                        if "type" in parsed_json and "name" in parsed_json and "parameters" in parsed_json:
+                            if parsed_json["type"] == "function":
+                                return {
+                                    "use_tool": parsed_json["name"],
+                                    "arguments": parsed_json["parameters"]
+                                }
+                        
+                        # Formato original
+                        if 'use_tool' in parsed_json and 'arguments' in parsed_json:
+                            return parsed_json
+                            
                     except json.JSONDecodeError:
                         # Intentar reparación
                         repaired = JSONUtils._repair_json(json_str)
                         if repaired:
                             try:
-                                return json.loads(repaired)
+                                parsed_repaired = json.loads(repaired)
+                                # Aplicar misma conversión al JSON reparado
+                                if "type" in parsed_repaired and parsed_repaired["type"] == "function":
+                                    return {
+                                        "use_tool": parsed_repaired["name"],
+                                        "arguments": parsed_repaired["parameters"]
+                                    }
+                                return parsed_repaired
                             except:
                                 continue
             
             # Búsqueda manual como último recurso
-            if '"use_tool"' in response:
-                return JSONUtils._manual_extraction(response)
+            if '"use_tool"' in response or '"name"' in response:
+                return JSONUtils._manual_extraction_enhanced(response)
             
             return None
             
         except Exception as e:
             logger.error(f"Error extrayendo tool request: {e}")
             return None
-    
+
     @staticmethod
     def _repair_json(json_str: str) -> Optional[str]:
         """Repara JSON malformado"""
@@ -201,6 +222,39 @@ class JSONUtils:
                                 return json.loads(repaired)
                             except:
                                 continue
+            
+            return None
+            
+        except Exception:
+            return None
+    
+    @staticmethod 
+    def _manual_extraction_enhanced(response: str) -> Optional[Dict]:
+        """Extracción manual mejorada para múltiples formatos"""
+        try:
+            # ✅ BUSCAR AMBOS FORMATOS
+            patterns_to_find = [
+                (r'"use_tool"\s*:\s*"([^"]+)"', r'"arguments"\s*:\s*(\{[^}]*\})'),
+                (r'"name"\s*:\s*"([^"]+)"', r'"parameters"\s*:\s*(\{[^}]*\})'),  # ← NUEVO
+                (r'"function"\s*:\s*"([^"]+)"', r'"arguments"\s*:\s*(\{[^}]*\})')
+            ]
+            
+            for tool_pattern, args_pattern in patterns_to_find:
+                tool_match = re.search(tool_pattern, response)
+                args_match = re.search(args_pattern, response)
+                
+                if tool_match and args_match:
+                    tool_name = tool_match.group(1)
+                    args_str = args_match.group(1)
+                    
+                    try:
+                        arguments = json.loads(args_str)
+                        return {
+                            "use_tool": tool_name,
+                            "arguments": arguments
+                        }
+                    except json.JSONDecodeError:
+                        continue
             
             return None
             

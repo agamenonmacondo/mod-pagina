@@ -474,24 +474,45 @@ def chat_message():
 
 @chat_bp.route('/api/chat/image/<path:image_path>', methods=['GET'])
 def get_image(image_path):
-    """Servir imágenes"""
+    """Servir imágenes - VERSIÓN ACTUALIZADA"""
     try:
         logger.info(f"📷 Solicitando imagen: {image_path}")
         
         base_path = Path(__file__).parent.parent
         
+        # 🔥 AGREGAR uploaded images COMO PRIMERA PRIORIDAD
         search_locations = [
-            base_path / 'llmpagina' / 'ava_bot' / 'tools' / 'adapters' / 'stored_images' / image_path,
-            base_path / 'generated_images' / image_path,
-            base_path / 'llmpagina' / 'ava_bot' / 'generated_images' / image_path,
+            # Prioridad 1: Imágenes subidas por usuarios
+            ('uploaded_images', base_path / 'llmpagina' / 'ava_bot' / 'uploaded images' / image_path),
+            # Prioridad 2: Imágenes almacenadas por herramientas
+            ('stored_images', base_path / 'llmpagina' / 'ava_bot' / 'tools' / 'adapters' / 'stored_images' / image_path),
+            # Prioridad 3: Imágenes generadas
+            ('generated_images', base_path / 'generated_images' / image_path),
+            ('ava_generated', base_path / 'llmpagina' / 'ava_bot' / 'generated_images' / image_path),
         ]
         
-        for location in search_locations:
-            if location.exists():
-                logger.info(f"✅ Imagen encontrada: {location}")
-                return send_file(str(location), mimetype='image/png')
+        for location_name, location_path in search_locations:
+            if location_path.exists():
+                logger.info(f"✅ Imagen encontrada en {location_name}: {location_path}")
+                
+                # Detectar el tipo MIME correcto
+                mime_type = 'image/png'  # Default
+                if image_path.lower().endswith(('.jpg', '.jpeg')):
+                    mime_type = 'image/jpeg'
+                elif image_path.lower().endswith('.png'):
+                    mime_type = 'image/png'
+                elif image_path.lower().endswith('.gif'):
+                    mime_type = 'image/gif'
+                elif image_path.lower().endswith('.webp'):
+                    mime_type = 'image/webp'
+                
+                return send_file(str(location_path), mimetype=mime_type)
         
-        logger.error(f"❌ Imagen no encontrada: {image_path}")
+        logger.error(f"❌ Imagen no encontrada en ninguna ubicación: {image_path}")
+        logger.info("🔍 Ubicaciones buscadas:")
+        for location_name, location_path in search_locations:
+            logger.info(f"   {location_name}: {location_path} ({'✅' if location_path.exists() else '❌'})")
+        
         return jsonify({'error': f'Imagen no encontrada: {image_path}'}), 404
         
     except Exception as e:
@@ -605,3 +626,161 @@ def test_image_response():
     except Exception as e:
         logger.error(f"❌ Error en test de imagen: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
+
+@chat_bp.route('/api/chat/image-analysis', methods=['POST'])
+def analyze_image():
+    """Endpoint para análisis de imágenes - RUTA ESTRICTA"""
+    try:
+        logger.info("📷 === INICIO ANÁLISIS DE IMAGEN ===")
+        
+        # Verificar que se envió una imagen
+        if 'image' not in request.files:
+            return jsonify({
+                'success': False,
+                'response': 'No se recibió ninguna imagen'
+            }), 400
+        
+        file = request.files['image']
+        message = request.form.get('message', 'Analiza esta imagen que acabo de subir')
+        unlimited = request.form.get('unlimited', 'false').lower() == 'true'
+        
+        if file.filename == '':
+            return jsonify({
+                'success': False,
+                'response': 'Archivo vacío'
+            }), 400
+        
+        # 🔥 OBTENER TAMAÑO DEL ARCHIVO DE FORMA SEGURA
+        file.seek(0, 2)
+        file_size = file.tell()
+        file.seek(0)
+        
+        logger.info(f"📋 Procesando imagen: {file.filename} ({file.content_type}, {file_size} bytes)")
+        
+        # 🔥 PASO 1: GUARDAR EN LA RUTA EXACTA QUE YA EXISTE
+        import uuid
+        import os
+        
+        file_extension = os.path.splitext(file.filename)[1].lower() or '.png'
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        unique_filename = f"user_upload_{timestamp}_{uuid.uuid4().hex[:8]}{file_extension}"
+        
+        # 🔥 RUTA EXACTA Y ESTRICTA - LA QUE YA ESTÁ FUNCIONANDO
+        base_path = Path(__file__).parent.parent
+        uploaded_images_dir = base_path / 'llmpagina' / 'ava_bot' / 'uploaded images'
+        permanent_file_path = uploaded_images_dir / unique_filename
+        
+        # Guardar el archivo
+        file.save(str(permanent_file_path))
+        
+        # Verificar que se guardó
+        if not permanent_file_path.exists():
+            return jsonify({'success': False, 'response': 'Error guardando imagen'}), 500
+        
+        actual_file_size = permanent_file_path.stat().st_size
+        logger.info(f"💾 Imagen guardada: {permanent_file_path}")
+        logger.info(f"📏 Tamaño: {actual_file_size} bytes")
+        
+        # 🔥 PASO 2: USAR LA RUTA EXACTA QUE AVA NECESITA
+        # Basándose en las imágenes existentes en el attachment:
+        # user_upload_20250604_221642_df370cd7.png
+        # user_upload_20250604_222416_24f4459d.png
+        
+        # AVA trabaja desde: c:\Users\h\Downloads\pagina ava\llmpagina\ava_bot\
+        # Las imágenes están en: c:\Users\h\Downloads\pagina ava\llmpagina\ava_bot\uploaded images\
+        # Por lo tanto, la ruta relativa es: "uploaded images/filename.png"
+        
+        ava_bot_dir = base_path / 'llmpagina' / 'ava_bot'
+        relative_path_for_ava = f"uploaded images/{unique_filename}"
+        
+        # 🔥 VERIFICACIÓN ESTRICTA DE RUTAS
+        logger.info("🔍 === VERIFICACIÓN ESTRICTA DE RUTAS ===")
+        logger.info(f"📁 Directorio AVA: {ava_bot_dir}")
+        logger.info(f"📁 Directorio imágenes: {uploaded_images_dir}")
+        logger.info(f"📄 Archivo guardado: {permanent_file_path}")
+        logger.info(f"📄 Archivo existe: {'✅ SÍ' if permanent_file_path.exists() else '❌ NO'}")
+        logger.info(f"🎯 Ruta para AVA: {relative_path_for_ava}")
+        
+        # Verificar desde perspectiva de AVA
+        ava_perspective_file = ava_bot_dir / relative_path_for_ava
+        logger.info(f"🎯 Ruta completa AVA: {ava_perspective_file}")
+        logger.info(f"🎯 AVA puede ver archivo: {'✅ SÍ' if ava_perspective_file.exists() else '❌ NO'}")
+        
+        # 🔥 PASO 3: MENSAJE PARA AVA CON RUTA EXACTA
+        ava_message = f'mira esta imagen "uploaded images/{unique_filename}"'
+        
+        logger.info("📤 === MENSAJE PARA AVA ===")
+        logger.info(f"Ruta enviada: '{relative_path_for_ava}'")
+        logger.info(f"Longitud mensaje: {len(ava_message)} caracteres")
+        
+        # 🔥 PASO 4: VERIFICAR AVA DISPONIBLE
+        global ava_process
+        if not ava_process or ava_process.poll() is not None:
+            logger.info("🚀 Iniciando AVA...")
+            if not start_ava():
+                return jsonify({
+                    'success': False,
+                    'response': 'Error iniciando AVA'
+                }), 500
+            time.sleep(3)
+        
+        # 🔥 PASO 5: ENVIAR A AVA
+        logger.info("📤 Enviando a AVA...")
+        
+        try:
+            if unlimited:
+                response = send_to_ava_unlimited(ava_message)
+            else:
+                response = send_to_ava(ava_message)
+            
+            logger.info(f"📥 Respuesta de AVA: {str(response)[:150]}...")
+            
+        except Exception as comm_error:
+            logger.error(f"❌ Error comunicación: {comm_error}")
+            return jsonify({
+                'success': False,
+                'response': f'Error comunicación AVA: {str(comm_error)}'
+            }), 500
+        
+        # 🔥 PASO 6: PROCESAR RESPUESTA
+        if isinstance(response, dict) and response.get('image_generated'):
+            logger.info(f"🖼️ AVA generó imagen: {response.get('image_filename')}")
+            return jsonify({
+                'success': True,
+                'response': response.get('text', 'Análisis completado con imagen'),
+                'image_generated': True,
+                'image_url': response.get('image_url'),
+                'image_filename': response.get('image_filename'),
+                'user_image_path': str(permanent_file_path),
+                'user_image_filename': unique_filename,
+                'user_image_relative_path': relative_path_for_ava,
+                'timestamp': datetime.now().isoformat(),
+                'analysis_type': 'image_with_generated_response'
+            })
+        else:
+            response_text = str(response) if response else "No se pudo analizar la imagen"
+            logger.info(f"📝 Respuesta texto: {len(response_text)} caracteres")
+            
+            return jsonify({
+                'success': True,
+                'response': response_text,
+                'image_generated': False,
+                'user_image_path': str(permanent_file_path),
+                'user_image_filename': unique_filename,
+                'user_image_relative_path': relative_path_for_ava,
+                'timestamp': datetime.now().isoformat(),
+                'analysis_type': 'image_text_analysis'
+            })
+        
+    except Exception as e:
+        logger.error(f"❌ ERROR CRÍTICO: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
+        
+        return jsonify({
+            'success': False,
+            'response': f'Error procesando imagen: {str(e)}',
+            'error_type': 'critical_error',
+            'timestamp': datetime.now().isoformat()
+        }), 500
+

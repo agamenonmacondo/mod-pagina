@@ -38,7 +38,7 @@ class ToolRegistry:
             logger.warning(f"❌ Adapters directory not found: {adapters_dir}")
             return
         
-        # Lista de adapters conocidos (se puede expandir automáticamente)
+        # Lista de adapters conocidos (AGREGANDO PLAYWRIGHT ADAPTER)
         known_adapters = [
             ("calendar_adapter.py", "CalendarAdapter"),
             ("meet_adapter.py", "MeetAdapter"), 
@@ -46,7 +46,14 @@ class ToolRegistry:
             ("search_adapter.py", "SearchAdapter"),
             ("drive_adapter.py", "DriveAdapter"),
             ("image_adapter.py", "ImageAdapter"),
-            ("calendar_check_adapter.py", "CalendarCheckAdapter")
+            ("calendar_check_adapter.py", "CalendarCheckAdapter"),
+            ("memory_adapter.py", "MemoryAdapter"),
+            ("image_display_adapter.py", "ImageDisplayAdapter"),
+            ("file_adapter.py", "FileManagerAdapter"),
+            # ✅ AGREGAR VISION ADAPTER
+            ("vision_adapter.py", "VisionAdapter"),
+            # ✅ AGREGAR PLAYWRIGHT ADAPTER
+            ("playwright_adapter.py", "PlaywrightAdapter")
         ]
         
         for filename, class_name in known_adapters:
@@ -100,9 +107,12 @@ class ToolRegistry:
             # Crear instancia del adapter
             adapter_instance = adapter_class()
             
-            # Verificar que sea un adapter válido
-            if not hasattr(adapter_instance, 'process'):
-                logger.error(f"❌ {class_name} missing 'process' method")
+            # Verificar que sea un adapter válido (process o execute)
+            valid_methods = ['process', 'execute']
+            has_valid_method = any(hasattr(adapter_instance, method) for method in valid_methods)
+            
+            if not has_valid_method:
+                logger.error(f"❌ {class_name} missing required methods: {valid_methods}")
                 return None
             
             # Wrap con funcionalidad MCP si es necesario
@@ -158,8 +168,13 @@ class MCPToolWrapper:
             else:
                 validated_params = params
             
-            # Ejecutar adapter original
-            result = self.adapter.process(validated_params)
+            # Ejecutar adapter original - priorizar 'process' sobre 'execute'
+            if hasattr(self.adapter, 'process'):
+                result = self.adapter.process(validated_params)
+            elif hasattr(self.adapter, 'execute'):
+                result = self.adapter.execute(validated_params)
+            else:
+                raise Exception(f"No valid execution method found for {self.name}")
             
             logger.info(f"✅ Tool {self.name} executed successfully")
             return result
@@ -217,3 +232,4 @@ if __name__ == "__main__":
     for name, tool in tools.items():
         print(f"   • {name}: {tool.description}")
         print(f"     Schema: {bool(tool.schema)}")
+        print(f"     Methods: {[m for m in ['process', 'execute'] if hasattr(tool.adapter, m)]}")

@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
-            // ✅ HTML SIMPLIFICADO
+            // ✅ HTML CON BOTÓN DE SUBIR IMAGEN
             const chatContainer = document.createElement('div');
             chatContainer.className = 'chat-assistant-container';
             chatContainer.innerHTML = `
@@ -46,6 +46,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
 
                     <div class="chat-input">
+                        <input type="file" id="imageInput" accept="image/*" style="display: none;">
+                        <button class="upload-btn" id="uploadBtn" type="button" title="Subir imagen">
+                            <i class="fas fa-image"></i>
+                        </button>
                         <input type="text" id="chatInput" placeholder="Escribe tu mensaje..." autocomplete="off">
                         <button id="sendButton" type="button">
                             <i class="fas fa-paper-plane"></i>
@@ -65,9 +69,11 @@ document.addEventListener('DOMContentLoaded', function() {
             const closeBtn = document.getElementById('closeBtn');
             const sendButton = document.getElementById('sendButton');
             const chatInput = document.getElementById('chatInput');
+            const uploadBtn = document.getElementById('uploadBtn');
+            const imageInput = document.getElementById('imageInput');
 
-            if (!chatBubble || !closeBtn || !sendButton || !chatInput) {
-                console.error('❌ Elementos del chat no encontrados');
+            if (!chatBubble || !closeBtn || !sendButton || !chatInput || !uploadBtn || !imageInput) {
+                console.error('❌ Algunos elementos no se encontraron');
                 return;
             }
 
@@ -77,8 +83,18 @@ document.addEventListener('DOMContentLoaded', function() {
             sendButton.addEventListener('click', () => this.sendMessage());
             chatInput.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') {
-                    e.preventDefault();
                     this.sendMessage();
+                }
+            });
+
+            // ✅ EVENTOS PARA BOTÓN DE SUBIR IMAGEN
+            uploadBtn.addEventListener('click', () => {
+                imageInput.click();
+            });
+
+            imageInput.addEventListener('change', (e) => {
+                if (e.target.files && e.target.files[0]) {
+                    this.handleImageUpload(e.target.files[0]);
                 }
             });
 
@@ -251,6 +267,165 @@ document.addEventListener('DOMContentLoaded', function() {
                 this.addMessage(errorMessage, 'assistant');
             }
         }
+
+        // 🔥 ACTUALIZAR FUNCIÓN handleImageUpload
+        async handleImageUpload(file) {
+            console.log('📸 Imagen seleccionada:', file.name);
+            
+            // Validar tipo de archivo
+            if (!file.type.startsWith('image/')) {
+                this.addMessage('❌ Por favor selecciona solo archivos de imagen.', 'assistant');
+                return;
+            }
+            
+            // Validar tamaño (max 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                this.addMessage('❌ La imagen es muy grande. Máximo 5MB.', 'assistant');
+                return;
+            }
+            
+            try {
+                // 🔥 MOSTRAR PLACEHOLDER MIENTRAS SE SUBE
+                this.addMessage(`📷 Enviando imagen: ${file.name}...`, 'user');
+                
+                // Mostrar indicador de procesamiento
+                this.showTypingIndicator();
+                this.isTyping = true;
+                
+                // 🔥 ENVIAR DIRECTAMENTE AL BACKEND SIN PREVIEW
+                await this.sendImageToBackend(file);
+                
+            } catch (error) {
+                console.error('❌ Error procesando imagen:', error);
+                this.addMessage('❌ Error procesando la imagen.', 'assistant');
+            }
+        }
+
+        // 🔥 ACTUALIZAR sendImageToBackend PARA USAR NOMBRE CORRECTO
+        async sendImageToBackend(file) {
+            console.log('📤 Enviando imagen al backend para análisis...');
+
+            try {
+                // Convertir archivo a FormData
+                const formData = new FormData();
+                formData.append('image', file);
+                // 🔥 CAMBIAR: Enviar mensaje genérico, no el nombre original
+                formData.append('message', 'Analiza esta imagen que acabo de subir');
+                formData.append('unlimited', 'false');
+                
+                console.log('📋 FormData preparado:', {
+                    original_filename: file.name,
+                    size: file.size,
+                    type: file.type
+                });
+                
+                // Enviar al endpoint
+                const response = await fetch('/api/chat/image-analysis', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                console.log('📥 Respuesta del backend:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const rawText = await response.text();
+                console.log('📄 Respuesta RAW del backend:', rawText);
+                
+                const data = JSON.parse(rawText);
+                console.log('📊 Datos parseados:', data);
+                
+                // Ocultar typing indicator
+                this.hideTypingIndicator();
+                this.isTyping = false;
+                
+                // Procesar respuesta del análisis
+                if (data.success) {
+                    // 🔥 USAR EL NOMBRE ÚNICO GENERADO POR EL BACKEND
+                    if (data.user_image_filename && data.user_image_path) {
+                        console.log('📸 Imagen guardada en servidor:');
+                        console.log('   Nombre original:', file.name);
+                        console.log('   Nombre único:', data.user_image_filename);
+                        console.log('   Ruta servidor:', data.user_image_path);
+                        
+                        const userImageUrl = `/api/chat/image/${data.user_image_filename}`;
+                        this.addUserImageFromServer(data.user_image_filename, userImageUrl, file.name);
+                    }
+                    
+                    const responseText = data.response || 'Análisis completado';
+                    
+                    // Si AVA generó una nueva imagen como respuesta
+                    if (data.image_generated && data.image_url && data.image_filename) {
+                        this.addMessageWithImage(responseText, data.image_url, data.image_filename);
+                    } else {
+                        this.addMessage(responseText, 'assistant');
+                    }
+                } else {
+                    this.addMessage(`❌ Error analizando imagen: ${data.response || data.error}`, 'assistant');
+                }
+                
+            } catch (error) {
+                console.error('❌ Error enviando imagen al backend:', error);
+                
+                this.hideTypingIndicator();
+                this.isTyping = false;
+                
+                this.addMessage(`❌ Error procesando imagen: ${error.message}`, 'assistant');
+            }
+        }
+
+        // 🔥 ACTUALIZAR FUNCIÓN addUserImageFromServer PARA MOSTRAR AMBOS NOMBRES
+        addUserImageFromServer(uniqueFilename, serverImageUrl, originalFilename = null) {
+            console.log('📷 Agregando imagen del usuario desde servidor:', serverImageUrl);
+            
+            const chatMessages = document.getElementById('chatMessages');
+            if (!chatMessages) return;
+            
+            // 🔥 MOSTRAR TANTO EL NOMBRE ORIGINAL COMO EL ÚNICO
+            const displayName = originalFilename ? `${originalFilename} (${uniqueFilename})` : uniqueFilename;
+            
+            const messageElement = document.createElement('div');
+            messageElement.className = 'message user message-with-image';
+            messageElement.innerHTML = `
+                <div class="message-content">
+                    📷 Imagen enviada: ${originalFilename || uniqueFilename}
+                    ${originalFilename ? `<br><small style="opacity: 0.7;">Guardada como: ${uniqueFilename}</small>` : ''}
+                </div>
+                <div class="image-container">
+                    <img src="${serverImageUrl}" 
+                         alt="${this.escapeHtml(displayName)}" 
+                         onload="console.log('✅ Imagen del usuario cargada desde servidor:', '${uniqueFilename}');"
+                         onerror="this.onerror=null; this.style.display='none'; this.parentElement.innerHTML='<div style=&quot;color: #dc3545; padding: 10px; text-align: center; border: 1px dashed #dc3545; border-radius: 8px;&quot;>❌ Error cargando imagen<br><small>${uniqueFilename}</small></div>';"
+                         onclick="window.chatBubble.openImageModal('${serverImageUrl}', '${this.escapeHtml(displayName)}')">
+            
+            <div class="image-controls">
+                <button class="control-btn download" 
+                        onclick="window.chatBubble.downloadImage('${serverImageUrl}', '${this.escapeHtml(originalFilename || uniqueFilename)}'); event.stopPropagation();" 
+                        title="Descargar imagen">
+                    <i class="fas fa-download"></i>
+                </button>
+                
+                <button class="control-btn expand" 
+                        onclick="window.chatBubble.openImageModal('${serverImageUrl}', '${this.escapeHtml(displayName)}'); event.stopPropagation();" 
+                        title="Ver en pantalla completa">
+                    <i class="fas fa-expand"></i>
+                </button>
+            </div>
+            
+            <div class="image-info">
+                <i class="fas fa-image" style="margin-right: 4px;"></i>
+                ${displayName.length > 30 ? displayName.substring(0, 30) + '...' : displayName}
+            </div>
+        </div>
+    `;
+    
+    chatMessages.appendChild(messageElement);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    
+    console.log('✅ Imagen del usuario agregada desde servidor con nombre único:', uniqueFilename);
+}
 
         addMessage(message, sender) {
             console.log('💬 Agregando mensaje al chat:', { message, sender });
@@ -462,13 +637,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 .replace(/"/g, "&quot;")
                 .replace(/'/g, "&#039;");
         }
-    }
+
+    } // ✅ FIN DE LA CLASE ChatBubble
 
     // Iniciar la clase ChatBubble
     window.chatBubble = new ChatBubble();
 });
 
-// ✅ FUNCIÓN DE PRUEBA DIRECTA PARA VERIFICAR EL FLUJO
+// ✅ FUNCIONES DE PRUEBA FUERA DE LA CLASE
 window.testBackendResponse = async function() {
     console.log('🧪 === PRUEBA DIRECTA DEL BACKEND ===');
     
@@ -510,7 +686,6 @@ window.testBackendResponse = async function() {
     console.log('🧪 === FIN PRUEBA ===');
 };
 
-// ✅ FUNCIÓN PARA PROBAR SOLO LA VISUALIZACIÓN
 window.testImageVisualization = function() {
     console.log('🧪 === PRUEBA DE VISUALIZACIÓN ===');
     

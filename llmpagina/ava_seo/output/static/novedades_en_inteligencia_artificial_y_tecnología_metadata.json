@@ -2,13 +2,12 @@
   "image_filename": "novedades_en_inteligencia_artificial_y_tecnología.png",
   "article_title": "Novedades en Inteligencia Artificial y Tecnología",
   "article_file": "novedades_en_inteligencia_artificial_y_tecnología_20250604.json",
-  "prompt": "Here is the detailed prompt for the image:\n\n\"Create a conceptual image that visually represents the article 'Novedades en Inteligencia Artificial y Tecnología'. The image should be a close-up, detailed shot of a futuristic device surrounded by a halo of light, symbolizing innovation and intelligence.\n\nThe device, a sleek and modern smartwatch, should be the main focus of the image, with intricate circuitry and wires visible beneath its translucent surface. The watch face should display a 3D rendered image of a brain, representing the connection between artificial intelligence and human intelligence.\n\nIn the background, a gradient of blues and purples should fade into a dark grey, evoking a sense of mystery and technological advancement. The entire composition should be visually striking, with bold lines and shapes that draw the viewer's eye to the device.\n\nThe color palette should be a mix of cool blues and purples, with accents of bright orange and yellow to represent innovation and energy. The overall style should be professional, commercial, and modern, appealing to a tech-savvy audience.\n\nThe image should be rendered in high detail, with a shallow depth of field to blur the background and emphasize the device's intricate design. Incorporate subtle textures and reflections to give the image depth and dimensionality. The resulting image should be a stunning representation of the article, capturing the essence of innovation and technological advancement.\"",
-  "model": "fallback_model",
-  "generated_at": "2025-06-04T04:07:16.038872",
+  "prompt": "Here is the prompt:\n\n\"Create a visually stunning and conceptual image that captures the essence of the article 'Novedades en Inteligencia Artificial y Tecnología'. The image should depict a futuristic cityscape with sleek skyscrapers, neon lights, and AI-powered robots moving about. In the center, a humanoid robot with glowing blue eyes and a subtle smile, surrounded by a halo of light, represents the advancements in AI. The robot's face should be lit by a subtle gradient of blue and purple hues, symbolizing intelligence and innovation.\n\nIn the background, a cityscape with towering skyscrapers and flying drones should be visible, representing the impact of technology on our daily lives. The image should have a bold and vibrant color palette, with shades of blue, purple, and silver, evoking a sense of modernity and futurism.\n\nUse a mix of close-up shots and wide-angle views to create a sense of depth and scale. The image should be professionally styled, with a focus on clean lines, simple shapes, and minimal textures. The overall mood should be one of excitement, innovation, and possibility, capturing the essence of the article's theme of AI and technology transforming our world.\"",
+  "model": "FLUX.1-schnell-Free",
+  "generated_at": "2025-06-04T23:02:23.928144",
   "keywords": [
     "inteligencia artificial",
     "tecnología",
-    "aprendizaje automático",
-    "dispositivos electrónicos"
+    "innovación"
   ]
 }
