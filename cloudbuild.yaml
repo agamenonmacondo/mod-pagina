@@ -1,22 +1,21 @@
-# ✅ CONFIGURACIÓN OPTIMIZADA PARA AVA - CORREGIDA
+# ✅ CONFIGURACIÓN OPTIMIZADA PARA AVA
 options:
   logging: CLOUD_LOGGING_ONLY
   machineType: 'E2_HIGHCPU_8'
   substitution_option: 'ALLOW_LOOSE'
   
-# ✅ VARIABLES DE SUSTITUCIÓN
 substitutions:
-  _SERVICE_NAME: 'ava-assistant'
+  _SERVICE_NAME: 'avacloud'
   _REGION: 'us-central1'
-  _MEMORY: '3Gi'          # ⬅️ CAMBIADO A 3GB
-  _CPU: '2'
+  _MEMORY: '4Gi'          # ✅ 4GB PARA MEMORIA MULTIMODAL
+  _CPU: '2'               # ✅ 2 vCPU REQUERIDAS PARA +2GB
   _TIMEOUT: '3600s'
   _MAX_INSTANCES: '10'
   _MIN_INSTANCES: '0'
-  _CONCURRENCY: '80'
+  _CONCURRENCY: '20'      # ✅ REDUCIDO PARA MANEJAR MEMORIA
 
 steps:
-  # ✅ PASO 1: BUILD CON MEJOR MANEJO DE ERRORES Y CACHE
+  # Build
   - name: 'gcr.io/cloud-builders/docker'
     args: [
       'build',
@@ -28,14 +27,14 @@ steps:
     ]
     timeout: '1200s'
 
-  # ✅ PASO 2: PUSH DE LAS IMÁGENES
+  # Push
   - name: 'gcr.io/cloud-builders/docker'
     args: ['push', 'gcr.io/$PROJECT_ID/${_SERVICE_NAME}:$BUILD_ID']
     
   - name: 'gcr.io/cloud-builders/docker'
     args: ['push', 'gcr.io/$PROJECT_ID/${_SERVICE_NAME}:latest']
 
-  # ✅ PASO 3: DEPLOY A CLOUD RUN CON 3GB MEMORIA
+  # Deploy con configuración de memoria optimizada
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: 'gcloud'
     args: [
@@ -45,35 +44,14 @@ steps:
       '--platform', 'managed',
       '--allow-unauthenticated',
       '--port', '8080',
-      '--memory', '${_MEMORY}',    # ⬅️ ESTO APLICARÁ 3GB
-      '--cpu', '${_CPU}',
+      '--memory', '${_MEMORY}',    # ✅ 4GB
+      '--cpu', '${_CPU}',          # ✅ 2 vCPU
       '--min-instances', '${_MIN_INSTANCES}',
       '--max-instances', '${_MAX_INSTANCES}',
       '--timeout', '${_TIMEOUT}',
       '--concurrency', '${_CONCURRENCY}',
       '--set-env-vars',
-      'PYTHONPATH=/app:/app/llmpagina:/app/llmpagina/ava_bot,PORT=8080,MEMORY_PATH=/data,PYTHONUNBUFFERED=1,PYTHONDONTWRITEBYTECODE=1,CLOUD_ENV=production'
+      'PYTHONPATH=/app,MEMORY_PATH=/tmp,PYTHONUNBUFFERED=1,CLOUD_ENV=production'
     ]
 
-  # ✅ PASO 4: VERIFICAR DEPLOYMENT
-  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-    entrypoint: 'gcloud'
-    args: [
-      'run', 'services', 'describe', '${_SERVICE_NAME}',
-      '--region', '${_REGION}',
-      '--format', 'get(status.url)'
-    ]
-
-# ✅ TIMEOUT EXTENDIDO PARA BUILD COMPLETO
 timeout: '1800s'
-
-# ✅ IMÁGENES A ALMACENAR EN REGISTRY
-images:
-  - 'gcr.io/$PROJECT_ID/${_SERVICE_NAME}:$BUILD_ID'
-  - 'gcr.io/$PROJECT_ID/${_SERVICE_NAME}:latest'
-
-# ✅ ARTEFACTOS PARA TRACKING
-artifacts:
-  images:
-    - 'gcr.io/$PROJECT_ID/${_SERVICE_NAME}:$BUILD_ID'
-    - 'gcr.io/$PROJECT_ID/${_SERVICE_NAME}:latest'
