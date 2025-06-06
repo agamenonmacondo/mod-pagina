@@ -8,7 +8,7 @@ options:
 substitutions:
   _SERVICE_NAME: 'ava-assistant'
   _REGION: 'us-central1'
-  _MEMORY: '2Gi'
+  _MEMORY: '3Gi'          # ⬅️ CAMBIADO A 3GB
   _CPU: '2'
   _TIMEOUT: '3600s'
   _MAX_INSTANCES: '10'
@@ -35,7 +35,7 @@ steps:
   - name: 'gcr.io/cloud-builders/docker'
     args: ['push', 'gcr.io/$PROJECT_ID/${_SERVICE_NAME}:latest']
 
-  # ✅ PASO 3: DEPLOY A CLOUD RUN CON CONFIGURACIÓN COMPLETA
+  # ✅ PASO 3: DEPLOY A CLOUD RUN CON 3GB MEMORIA
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: 'gcloud'
     args: [
@@ -45,7 +45,7 @@ steps:
       '--platform', 'managed',
       '--allow-unauthenticated',
       '--port', '8080',
-      '--memory', '${_MEMORY}',
+      '--memory', '${_MEMORY}',    # ⬅️ ESTO APLICARÁ 3GB
       '--cpu', '${_CPU}',
       '--min-instances', '${_MIN_INSTANCES}',
       '--max-instances', '${_MAX_INSTANCES}',
