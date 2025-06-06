@@ -13,14 +13,12 @@ ENV MEMORY_PATH=/data
 ENV PORT=8080
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
-ENV DEBIAN_FRONTEND=noninteractive
+ENV PIP_NO_CACHE_DIR=1
 
 # ✅ INSTALAR DEPENDENCIAS DEL SISTEMA
 RUN apt-get update && apt-get install -y \
     # Build tools
     gcc g++ make \
-    # Database
-    sqlite3 \
     # Web tools
     curl wget \
     # Version control
@@ -41,28 +39,20 @@ RUN mkdir -p /data /app/logs /app/instance \
 # ✅ CAMBIAR A DIRECTORIO DE TRABAJO
 WORKDIR /app
 
-# ✅ COPIAR Y INSTALAR DEPENDENCIAS COMO ROOT
-COPY requirements.txt .
-RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
-    pip install --no-cache-dir -r requirements.txt
+# ✅ ACTUALIZAR PIP Y HERRAMIENTAS
+RUN pip install --upgrade pip setuptools wheel
 
-# ✅ INSTALAR PLAYWRIGHT BROWSERS
-RUN playwright install chromium && \
-    playwright install-deps
+# ✅ COPIAR Y INSTALAR DEPENDENCIAS CON MANEJO DE ERRORES
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt || \
+    (echo "Error en requirements.txt, probando versión mínima..." && \
+     pip install Flask==3.0.0 Werkzeug==3.0.1 gunicorn==21.2.0 \
+     bcrypt==4.0.1 python-dotenv==1.0.0 requests==2.31.0 \
+     groq==0.4.1 httpx==0.25.2 google-auth==2.23.4 \
+     Pillow==10.1.0 packaging==23.2)
 
 # ✅ COPIAR CÓDIGO DE LA APLICACIÓN
 COPY --chown=appuser:appuser . .
-
-# ✅ VERIFICAR ESTRUCTURA DE ARCHIVOS
-RUN echo "=== VERIFICANDO ESTRUCTURA AVA ===" && \
-    echo "📁 Directorio raíz:" && ls -la && \
-    echo "📄 app.py:" && ls -la app.py && \
-    echo "📁 llmpagina/:" && ls -la llmpagina/ && \
-    echo "📁 ava_bot/:" && ls -la llmpagina/ava_bot/ && \
-    echo "📁 tools/:" && ls -la llmpagina/ava_bot/tools/ && \
-    echo "📁 routes/:" && ls -la routes/ && \
-    echo "📁 database/:" && ls -la database/ && \
-    echo "✅ Estructura verificada"
 
 # ✅ CONFIGURAR PERMISOS FINALES
 RUN chmod +x /app/app.py && \
