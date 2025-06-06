@@ -1,4 +1,4 @@
-# ✅ CONFIGURACIÓN OPTIMIZADA PARA AVA
+# ✅ CONFIGURACIÓN OPTIMIZADA PARA AVA - CORREGIDA
 options:
   logging: CLOUD_LOGGING_ONLY
   machineType: 'E2_HIGHCPU_8'
@@ -16,27 +16,26 @@ substitutions:
   _CONCURRENCY: '80'
 
 steps:
-  # ✅ PASO 1: BUILD DE LA IMAGEN
+  # ✅ PASO 1: BUILD CON MEJOR MANEJO DE ERRORES Y CACHE
   - name: 'gcr.io/cloud-builders/docker'
     args: [
       'build',
+      '--build-arg', 'BUILDKIT_INLINE_CACHE=1',
+      '--cache-from', 'gcr.io/$PROJECT_ID/${_SERVICE_NAME}:latest',
       '-t', 'gcr.io/$PROJECT_ID/${_SERVICE_NAME}:$BUILD_ID',
       '-t', 'gcr.io/$PROJECT_ID/${_SERVICE_NAME}:latest',
-      '--build-arg', 'BUILD_ID=$BUILD_ID',
-      '--build-arg', 'PROJECT_ID=$PROJECT_ID',
       '.'
     ]
-    dir: '.'
-    timeout: '900s'
+    timeout: '1200s'
 
-  # ✅ PASO 2: PUSH DE LA IMAGEN
+  # ✅ PASO 2: PUSH DE LAS IMÁGENES
   - name: 'gcr.io/cloud-builders/docker'
     args: ['push', 'gcr.io/$PROJECT_ID/${_SERVICE_NAME}:$BUILD_ID']
     
   - name: 'gcr.io/cloud-builders/docker'
     args: ['push', 'gcr.io/$PROJECT_ID/${_SERVICE_NAME}:latest']
 
-  # ✅ PASO 3: DEPLOY A CLOUD RUN
+  # ✅ PASO 3: DEPLOY A CLOUD RUN CON CONFIGURACIÓN COMPLETA
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: 'gcloud'
     args: [
@@ -53,7 +52,7 @@ steps:
       '--timeout', '${_TIMEOUT}',
       '--concurrency', '${_CONCURRENCY}',
       '--set-env-vars',
-      'PYTHONPATH=/app,PORT=8080,MEMORY_PATH=/data,PYTHONUNBUFFERED=1,CLOUD_ENV=production'
+      'PYTHONPATH=/app:/app/llmpagina:/app/llmpagina/ava_bot,PORT=8080,MEMORY_PATH=/data,PYTHONUNBUFFERED=1,PYTHONDONTWRITEBYTECODE=1,CLOUD_ENV=production'
     ]
 
   # ✅ PASO 4: VERIFICAR DEPLOYMENT
@@ -68,12 +67,13 @@ steps:
 # ✅ TIMEOUT EXTENDIDO PARA BUILD COMPLETO
 timeout: '1800s'
 
-# ✅ IMÁGENES A ALMACENAR
+# ✅ IMÁGENES A ALMACENAR EN REGISTRY
 images:
   - 'gcr.io/$PROJECT_ID/${_SERVICE_NAME}:$BUILD_ID'
   - 'gcr.io/$PROJECT_ID/${_SERVICE_NAME}:latest'
 
-# ✅ OPCIONES ADICIONALES
+# ✅ ARTEFACTOS PARA TRACKING
 artifacts:
   images:
     - 'gcr.io/$PROJECT_ID/${_SERVICE_NAME}:$BUILD_ID'
+    - 'gcr.io/$PROJECT_ID/${_SERVICE_NAME}:latest'
