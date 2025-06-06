@@ -1,58 +1,79 @@
-# ✅ CONFIGURACIÓN PARA APP.PY FLASK EXISTENTE
+# ✅ CONFIGURACIÓN OPTIMIZADA PARA AVA
 options:
   logging: CLOUD_LOGGING_ONLY
   machineType: 'E2_HIGHCPU_8'
   substitution_option: 'ALLOW_LOOSE'
-
+  
 # ✅ VARIABLES DE SUSTITUCIÓN
 substitutions:
-  _SERVICE_NAME: 'ava-app'
+  _SERVICE_NAME: 'ava-assistant'
   _REGION: 'us-central1'
-  _MEMORY: '4Gi'
+  _MEMORY: '2Gi'
   _CPU: '2'
   _TIMEOUT: '3600s'
   _MAX_INSTANCES: '10'
-  _MIN_INSTANCES: '1'
+  _MIN_INSTANCES: '0'
+  _CONCURRENCY: '80'
 
 steps:
-  # Paso 1: Construir la imagen Docker
+  # ✅ PASO 1: BUILD DE LA IMAGEN
   - name: 'gcr.io/cloud-builders/docker'
     args: [
       'build',
-      '-t', 'gcr.io/$PROJECT_ID/ava-app:$BUILD_ID',
-      '-t', 'gcr.io/$PROJECT_ID/ava-app:latest',
+      '-t', 'gcr.io/$PROJECT_ID/${_SERVICE_NAME}:$BUILD_ID',
+      '-t', 'gcr.io/$PROJECT_ID/${_SERVICE_NAME}:latest',
+      '--build-arg', 'BUILD_ID=$BUILD_ID',
+      '--build-arg', 'PROJECT_ID=$PROJECT_ID',
       '.'
     ]
     dir: '.'
+    timeout: '900s'
 
-  # Paso 2: Empujar la imagen al registro
+  # ✅ PASO 2: PUSH DE LA IMAGEN
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'gcr.io/$PROJECT_ID/ava-app:$BUILD_ID']
-
+    args: ['push', 'gcr.io/$PROJECT_ID/${_SERVICE_NAME}:$BUILD_ID']
+    
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'gcr.io/$PROJECT_ID/ava-app:latest']
+    args: ['push', 'gcr.io/$PROJECT_ID/${_SERVICE_NAME}:latest']
 
-  # Paso 3: Desplegar a Cloud Run
+  # ✅ PASO 3: DEPLOY A CLOUD RUN
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: 'gcloud'
     args: [
-      'run', 'deploy', 'ava-app',
-      '--image', 'gcr.io/$PROJECT_ID/ava-app:$BUILD_ID',
-      '--region', 'us-central1',
+      'run', 'deploy', '${_SERVICE_NAME}',
+      '--image', 'gcr.io/$PROJECT_ID/${_SERVICE_NAME}:$BUILD_ID',
+      '--region', '${_REGION}',
       '--platform', 'managed',
       '--allow-unauthenticated',
       '--port', '8080',
-      '--memory', '2Gi',
-      '--cpu', '1',
-      '--max-instances', '10',
-      '--set-env-vars', 
-      'PYTHONPATH=/app,PORT=8080,MEMORY_PATH=/data,PYTHONUNBUFFERED=1'
+      '--memory', '${_MEMORY}',
+      '--cpu', '${_CPU}',
+      '--min-instances', '${_MIN_INSTANCES}',
+      '--max-instances', '${_MAX_INSTANCES}',
+      '--timeout', '${_TIMEOUT}',
+      '--concurrency', '${_CONCURRENCY}',
+      '--set-env-vars',
+      'PYTHONPATH=/app,PORT=8080,MEMORY_PATH=/data,PYTHONUNBUFFERED=1,CLOUD_ENV=production'
     ]
 
-# Configurar timeout más largo para permitir construcción completa
-timeout: '1200s'
+  # ✅ PASO 4: VERIFICAR DEPLOYMENT
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'gcloud'
+    args: [
+      'run', 'services', 'describe', '${_SERVICE_NAME}',
+      '--region', '${_REGION}',
+      '--format', 'get(status.url)'
+    ]
 
-# Especificar qué imágenes se almacenan en el registro
+# ✅ TIMEOUT EXTENDIDO PARA BUILD COMPLETO
+timeout: '1800s'
+
+# ✅ IMÁGENES A ALMACENAR
 images:
-  - 'gcr.io/$PROJECT_ID/ava-app:$BUILD_ID'
-  - 'gcr.io/$PROJECT_ID/ava-app:latest'
+  - 'gcr.io/$PROJECT_ID/${_SERVICE_NAME}:$BUILD_ID'
+  - 'gcr.io/$PROJECT_ID/${_SERVICE_NAME}:latest'
+
+# ✅ OPCIONES ADICIONALES
+artifacts:
+  images:
+    - 'gcr.io/$PROJECT_ID/${_SERVICE_NAME}:$BUILD_ID'

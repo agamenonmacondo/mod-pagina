@@ -3,25 +3,34 @@ import json
 import sqlite3
 import hashlib
 import asyncio
-from typing import List, Dict, Optional, Tuple, Any
+from typing import List, Dict, Optional, Tuple, Any, Union
 from datetime import datetime, timedelta
 import numpy as np
 from pathlib import Path
 import base64
 import logging
+import re
 
-# Imports for embeddings
+# Imports for embeddings - CORREGIDO
 try:
+    import sentence_transformers
     from sentence_transformers import SentenceTransformer
     SENTENCE_TRANSFORMERS_AVAILABLE = True
-except ImportError:
+    print("✅ sentence-transformers importado correctamente")
+except ImportError as e:
+    print(f"❌ Error importando sentence-transformers: {e}")
+    SENTENCE_TRANSFORMERS_AVAILABLE = False
+except Exception as e:
+    print(f"❌ Error inesperado con sentence-transformers: {e}")
     SENTENCE_TRANSFORMERS_AVAILABLE = False
 
 try:
     import chromadb
     from chromadb.config import Settings
     CHROMADB_AVAILABLE = True
-except ImportError:
+    print("✅ chromadb importado correctamente")
+except ImportError as e:
+    print(f"❌ Error importando chromadb: {e}")
     CHROMADB_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
@@ -104,7 +113,10 @@ class MultimodalMemoryAdapter:
             # Usar directorio temporal pero con variable de entorno
             base_path = os.getenv('MEMORY_PATH', '/tmp/ava_memory')
             os.makedirs(base_path, exist_ok=True)
-        
+    
+        # ✅ CONFIGURAR BASE_PATH
+        self.base_path = base_path  # ← ESTO FALTABA
+    
         # ✅ RUTAS ESPECÍFICAS
         self.db_path = os.path.join(base_path, "multimodal_memory.db")
         self.chroma_path = os.path.join(base_path, "chroma_vectordb")
@@ -112,6 +124,7 @@ class MultimodalMemoryAdapter:
         # ✅ CREAR DIRECTORIOS
         os.makedirs(self.chroma_path, exist_ok=True)
         
+        self.logger.info(f"📁 Base path: {self.base_path}")  # ← AGREGAR LOG
         self.logger.info(f"📊 Cloud SQLite: {self.db_path}")
         self.logger.info(f"🧠 Cloud ChromaDB: {self.chroma_path}")
     
@@ -119,8 +132,9 @@ class MultimodalMemoryAdapter:
         """Configuración para entorno local - RUTAS RELATIVAS"""
         self.logger.info("🏠 Configurando memoria para entorno LOCAL...")
         
-        # ✅ RUTAS RELATIVAS AL ARCHIVO ACTUAL
+        # ✅ CONFIGURAR BASE_PATH PRIMERO
         base_path = Path(__file__).parent.absolute()
+        self.base_path = str(base_path)  # ← ESTO FALTABA
         
         self.db_path = str(base_path / "multimodal_memory.db")
         self.chroma_path = str(base_path / "chroma_vectordb")
@@ -129,6 +143,7 @@ class MultimodalMemoryAdapter:
         os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
         os.makedirs(self.chroma_path, exist_ok=True)
         
+        self.logger.info(f"📁 Base path: {self.base_path}")  # ← AGREGAR LOG
         self.logger.info(f"📊 Local SQLite: {self.db_path}")
         self.logger.info(f"🧠 Local ChromaDB: {self.chroma_path}")
     
@@ -652,15 +667,23 @@ class MultimodalMemoryAdapter:
         except Exception as e:
             logger.error(f"❌ Error creando enlace semántico: {e}")
     
-    def _extract_keywords(self, text: str) -> List[str]:
-        """Extrae keywords básicas del texto."""
-        # Implementación básica - mejorar con NLP
-        words = text.lower().split()
-        # Filtrar palabras comunes
-        stop_words = {'el', 'la', 'de', 'que', 'y', 'a', 'en', 'un', 'es', 'se', 'no', 'te', 'lo', 'le', 'da', 'su', 'por', 'son', 'con', 'para', 'al', 'del', 'las', 'los', 'una', 'como', 'pero', 'sus', 'le', 'ha', 'me', 'si', 'sin', 'sobre', 'este', 'ya', 'todo', 'esta', 'van', 'muy', 'mi', 'porque', 'algunos', 'más', 'qué'}
-        
-        keywords = [word for word in words if len(word) > 3 and word not in stop_words]
-        return list(set(keywords))[:10]  # Max 10 keywords únicas
+    def _extract_keywords(self, text: str) -> str:  # ← Cambiar return type de List[str] a str
+        """Extrae keywords del texto - DEVUELVE STRING EN VEZ DE LISTA"""
+        try:
+            # Limpiar texto
+            clean_text = re.sub(r'[^\w\s]', ' ', text.lower())
+            words = clean_text.split()
+            
+            # Filtrar palabras importantes (longitud > 3, no stopwords básicas)
+            stopwords = {'que', 'para', 'con', 'por', 'una', 'como', 'esta', 'pero', 'sus', 'fue'}
+            keywords = [word for word in words if len(word) > 3 and word not in stopwords]
+            
+            # ✅ DEVOLVER COMO STRING JSON EN VEZ DE LISTA
+            return json.dumps(keywords[:10])  # Máximo 10 keywords como JSON string
+            
+        except Exception as e:
+            logger.error(f"Error extrayendo keywords: {e}")
+            return "[]"  # Lista vacía como JSON string
     
     def _get_image_info(self, image_path: str) -> Dict:
         """Obtiene información básica de la imagen."""
@@ -1127,6 +1150,99 @@ class MultimodalMemoryAdapter:
                 "error": str(e),
                 "message": "❌ Error validando el sistema"
             }
+    
+    def _prepare_chroma_metadata(self, conversation_id: str, user_id: str, session_id: Optional[str] = None) -> Dict[str, Union[str, int, float, bool]]:
+        """Prepara metadatos compatibles con ChromaDB - CORREGIDO"""
+        try:
+            # ✅ SOLO TIPOS PERMITIDOS: str, int, float, bool
+            metadata = {
+                "conversation_id": str(conversation_id),
+                "user_id": str(user_id),
+                "session_id": str(session_id) if session_id else "default",
+                "timestamp": str(datetime.now().isoformat()),
+                "type": "text_memory"
+            }
+            
+            # ✅ VALIDAR QUE NO HAY LISTAS
+            for key, value in metadata.items():
+                if isinstance(value, (list, dict, tuple)):
+                    metadata[key] = json.dumps(value)  # Convertir a JSON string
+                elif value is None:
+                    metadata[key] = "none"
+                    
+            return metadata
+            
+        except Exception as e:
+            logger.error(f"Error preparando metadatos: {e}")
+            # Metadatos mínimos como fallback
+            return {
+                "conversation_id": str(conversation_id),
+                "user_id": str(user_id),
+                "type": "text_memory"
+            }
+    
+    async def _add_to_vector_store(self, content: str, conversation_id: str, user_id: str, session_id: Optional[str] = None):
+        """Añade contenido al vector store - CORREGIDO"""
+        try:
+            if not self.vector_store or not self.text_collection:
+                logger.warning("Vector store no disponible")
+                return
+            
+            # ✅ GENERAR EMBEDDINGS SEGUROS
+            if self.text_embedder:
+                try:
+                    # Limpiar contenido antes del embedding
+                    clean_content = self._clean_content_for_embedding(content)
+                    embeddings = self.text_embedder.encode(clean_content)
+                    
+                    # Convertir a lista si es numpy array
+                    if hasattr(embeddings, 'tolist'):
+                        embeddings = embeddings.tolist()
+                    
+                except Exception as e:
+                    logger.error(f"Error generando embeddings: {e}")
+                    return
+            else:
+                # Embeddings dummy si no hay modelo
+                embeddings = [0.0] * 384
+            
+            # ✅ METADATOS SEGUROS - SOLO STRINGS, INTS, FLOATS, BOOLS
+            metadata = {
+                "user_id": str(user_id),
+                "conversation_id": str(conversation_id),
+                "session_id": str(session_id) if session_id else "default",
+                "timestamp": datetime.now().isoformat(),
+                "type": "text_memory"
+            }
+            
+            # ✅ AÑADIR A CHROMADB CON VALIDACIÓN
+            self.text_collection.add(
+                embeddings=[embeddings],
+                documents=[str(content)],  # Asegurar que es string
+                metadatas=[metadata],  # Metadatos sin listas
+                ids=[f"text_{conversation_id}_{user_id}_{int(datetime.now().timestamp())}"]
+            )
+            
+            logger.info(f"✅ Contenido añadido al vector store: ID {conversation_id}")
+            
+        except Exception as e:
+            logger.error(f"Error guardando en vector store: {e}")
+    
+    def _clean_content_for_embedding(self, content: str) -> str:
+        """Limpia contenido para embeddings"""
+        try:
+            # Remover caracteres problemáticos
+            clean_content = re.sub(r'[^\w\s\.\,\!\?\-\(\)]', ' ', content)
+            
+            # Limitar longitud
+            if len(clean_content) > 500:
+                clean_content = clean_content[:500] + "..."
+                
+            return clean_content.strip()
+            
+        except Exception as e:
+            logger.error(f"Error limpiando contenido: {e}")
+            return str(content)[:200]
 
 # Funciones de utilidad para integración con el sistema existente
 async def create_multimodal_memory_adapter(base_path: Optional[str] = None) -> MultimodalMemoryAdapter:

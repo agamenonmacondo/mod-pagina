@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class AvaConfig:
     """Configuración centralizada del sistema Ava"""
-    # Timeouts por herramienta
+    # Timeouts por herramienta - AUMENTADOS
     TOOL_TIMEOUTS = {
         'search': 60.0,
         'image': 180.0,
@@ -33,7 +33,8 @@ class AvaConfig:
         'meet': 30.0,
         'memory': 10.0,
         'image_display': 10.0,
-        'default': 30.0
+        'playwright': 90.0,  # ✅ AÑADIR TIMEOUT ESPECÍFICO PARA PLAYWRIGHT
+        'default': 45.0      # ✅ AUMENTAR DEFAULT TAMBIÉN
     }
     
     # Constantes
