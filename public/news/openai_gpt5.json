@@ -1,0 +1,12 @@
+{
+  "id": "openai_gpt5",
+  "topic": "openai",
+  "title": "OpenAI lanza GPT-5 con capacidades revolucionarias",
+  "subtitle": "La nueva versión promete superar a GPT-4 en todas las métricas",
+  "preview": "OpenAI ha anunciado oficialmente GPT-5, su modelo de lenguaje más avanzado hasta la fecha. Esta nueva versión incluye capacidades de razonamiento mejoradas, mejor comprensión contextual y nuevas funcionalidades multimodales que prometen revolucionar la interacción con IA.",
+  "generated_at": "2025-06-16T20:53:49.722653",
+  "quality_score": 5,
+  "content_length": 1200,
+  "image_url": "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=600&h=400",
+  "file_url": "/news/openai_gpt5.json"
+}

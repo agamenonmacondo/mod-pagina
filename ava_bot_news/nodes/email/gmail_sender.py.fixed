@@ -1,0 +1,820 @@
+# filepath: c:\Users\h\Downloads\ava_bot\nodes\email\gmail_sender.py
+from google.oauth2.credentials import Credentials
+from googleapiclient.discovery import build
+from email.mime.text import MIMEText
+import base64
+import os
+import logging
+from typing import Dict, Any, Optional
+import json
+import requests
+import sys
+
+# Add parent directory to path when running this file directly
+if __name__ == '__main__':
+    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+    
+from state import AICompanionState
+
+# Configurar logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
+class GmailSender:   
+    def __init__(self):
+        try:            # Carga credenciales automáticamente
+            self.creds = Credentials.from_authorized_user_file(
+                os.path.join(os.path.dirname(__file__), '../../token.json'),
+                ['https://www.googleapis.com/auth/gmail.send', 'https://www.googleapis.com/auth/gmail.compose', 'https://www.googleapis.com/auth/gmail.modify']
+            )
+            self.service = build('gmail', 'v1', credentials=self.creds)
+            self.groq_api_key = os.getenv("GROQ_API_KEY")
+            self.groq_model = "meta-llama/llama-4-maverick-17b-128e-instruct"
+            self.llm_api_url = "https://api.groq.com/openai/v1/chat/completions"
+        except Exception as e:
+            logger.error(f"Error initializing GmailSender: {e}")
+            raise
+            
+    def _call_llm_for_json(self, prompt):
+        """
+        Método auxiliar para llamar al LLM y obtener una respuesta en formato JSON
+        """
+        try:
+            # Llamada a la API de Groq
+            headers = {
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {self.groq_api_key}"
+            }
+            
+            data = {
+                "model": self.groq_model,
+                "messages": prompt,
+                "response_format": {"type": "json_object"},
+                "temperature": 0.1,
+                "max_tokens": 500
+            }
+            
+            # Realizar la solicitud a la API
+            response = requests.post(
+                self.llm_api_url,
+                headers=headers,
+                json=data
+            )
+            
+            # Verificar si la respuesta fue exitosa
+            if response.status_code == 200:
+                result = response.json()
+                content = result["choices"][0]["message"]["content"]
+                
+                # Parsear el JSON retornado por el LLM
+                parsed_result = json.loads(content)
+                return parsed_result
+            else:
+                logger.error(f"Error en la API de LLM: {response.status_code} - {response.text}")
+                return None
+                
+        except Exception as e:
+            logger.error(f"Error al llamar al LLM para JSON: {str(e)}")
+            return None
+              def process(self, state: AICompanionState) -> str:
+        """
+        Procesa el estado y maneja la creación y envío de nuevos correos
+        """
+        logger.info("Processing email sending request...")
+        
+        try:
+            # Verificar si el mensaje es un agradecimiento por un correo enviado
+            last_assistant_message = None
+            for i in range(len(state.conversation_history) - 1, -1, -1):
+                message = state.conversation_history[i]
+                if message.get("role") == "assistant":
+                    last_assistant_message = message.get("content", "")
+                    break
+                    
+            if last_assistant_message and "¡Correo enviado exitosamente!" in last_assistant_message:
+                thank_keywords = ["gracias", "recibi", "recibí", "recibido", "llegó", "llego"]
+                thank_email_keywords = ["correo", "email", "mensaje"]
+                
+                if (any(word in state.input.lower() for word in thank_keywords) and 
+                    any(word in state.input.lower() for word in thank_email_keywords)):
+                    logger.info("Detectado agradecimiento por correo enviado, no iniciar nueva tarea")
+                    state.response = "Me alegra que hayas recibido el correo. ¿En qué más puedo ayudarte?"
+                    return "conversation_node"
+            
+            # Verificar si estamos en una tarea compuesta relacionada con email
+            if state.active_task == "search_and_email":
+                result = self._handle_composite_task(state)
+                if result:
+                    return result
+            
+            # Verificar si ya estamos en el proceso de enviar un correo normal
+            if state.is_in_task("email_sending"):
+                result = self._continue_email_sending(state)
+                if result:
+                    return result
+                
+            # Si no estamos en una tarea activa, iniciar el proceso
+            # Verificar si hay detalles del correo en el contexto
+            email_details = state.context.get('email_draft', None)
+            
+            if not email_details:
+                # Si no hay detalles en el contexto, extraer información del input inicial
+                email_details = self._extract_email_details(state.input)
+                
+            # Guardar los detalles en el contexto
+            state.context['email_draft'] = email_details
+            
+            # Preguntar por los datos faltantes
+            if not email_details.get('recipient'):
+                state.response = "¿A quién quieres enviar el correo? (dirección de email)"
+                state.set_active_task("email_sending", step="recipient")
+                return None
+            
+            if not email_details.get('subject'):
+                state.response = "¿Cuál es el asunto del correo?"
+                state.set_active_task("email_sending", step="subject")
+                return None
+                
+            if not email_details.get('body'):
+                state.response = "¿Qué mensaje quieres enviar en el correo?"
+                state.set_active_task("email_sending", step="body")
+                return None
+                
+            # Si tenemos todos los datos, confirmar
+            state.response = (f"Voy a enviar un correo a {email_details['recipient']} "
+                        f"con asunto '{email_details['subject']}' y el siguiente mensaje:\n\n"
+                        f"{email_details['body']}\n\n"
+                        f"¿Quieres enviarlo? (sí/no)")
+            state.set_active_task("email_sending", step="confirm")
+            return None
+            
+        except Exception as e:
+            logger.error(f"Error in gmail_sender process: {e}")
+            state.response = "Lo siento, hubo un error al procesar tu solicitud de envío de correo."
+            state.clear_active_task()
+            return None
+
+    def _handle_composite_task(self, state: AICompanionState) -> Optional[str]:
+        """
+        Maneja tareas compuestas que incluyen envío de correos,
+        como enviar resultados de búsquedas por email, utilizando el LLM para analizar las respuestas
+        """
+        logger.info("Manejando tarea compuesta con email...")
+        
+        current_step = state.task_status.get("step", "init")
+        
+        try:
+            # Verificar si la tarea está en la fase de email
+            if current_step == "search_complete":
+                # Tenemos resultados de búsqueda, preparar para email
+                search_results = state.context.get("search_results", [])
+                
+                if not search_results:
+                    state.response = "No tengo resultados de búsqueda para enviar por correo."
+                    state.context["task_completed"] = True
+                    return "memory_injection_node"
+                    
+                # Crear borrador de email con resultados de búsqueda
+                email_draft = state.context.get('email_draft', {})
+                
+                # Si no hay un borrador, creamos uno con los resultados
+                if not email_draft:
+                    # Usar LLM para formatear los resultados de búsqueda para email
+                    email_draft = self._format_search_results_with_llm(search_results, state.context.get('search_query', ''))
+                    state.context['email_draft'] = email_draft
+                
+                # Ahora seguimos el flujo normal de email pero manteniendo la tarea compuesta
+                if not email_draft.get('recipient'):
+                    state.response = "¿A quién quieres enviar estos resultados de búsqueda? (dirección de email)"
+                    state.task_status["step"] = "email_recipient"
+                    return None
+                    
+                elif not email_draft.get('subject'):
+                    state.response = "¿Cuál es el asunto para este correo con los resultados?"
+                    state.task_status["step"] = "email_subject"
+                    return None
+                    
+                else:
+                    # Confirmar envío
+                    state.response = (f"Voy a enviar los resultados de búsqueda a {email_draft['recipient']} "
+                                f"con asunto '{email_draft['subject']}'.\n\n"
+                                f"¿Quieres enviarlo? (sí/no)")
+                    state.task_status["step"] = "email_confirm"
+                    return None
+                    
+            # Manejar los distintos pasos del email en la tarea compuesta con LLM
+            elif current_step == "email_recipient":
+                # Extraer dirección de email con LLM
+                conversation_context = "\n".join([f"{msg['role']}: {msg['content']}" for msg in state.conversation_history[-3:]])
+                
+                prompt = [
+                    {
+                        "role": "system",
+                        "content": """Analiza la respuesta del usuario y extrae una dirección de correo electrónico.
+                        Responde en formato JSON con: {"valid": true|false, "email": "email@ejemplo.com"|null}
+                        
+                        Si encuentras una dirección válida, establece valid=true y proporciona el email.
+                        Si no encuentras un email válido, establece valid=false y email=null."""
+                    },
+                    {
+                        "role": "user",
+                        "content": f"Contexto previo: {conversation_context}\n\nRespuesta del usuario: {state.input}"
+                    }
+                ]
+                
+                result = self._call_llm_for_json(prompt)
+                email_draft = state.context.get('email_draft', {})
+                
+                if result and result.get("valid", False) and result.get("email"):
+                    email_draft['recipient'] = result["email"]
+                    
+                    # Confirmar envío
+                    state.response = (f"Voy a enviar los resultados de búsqueda a {email_draft['recipient']} "
+                                f"con asunto '{email_draft['subject']}'.\n\n"
+                                f"¿Quieres enviarlo? (sí/no)")
+                    state.task_status["step"] = "email_confirm"
+                else:
+                    # Intentar un fallback básico si el LLM falla
+                    if '@' in state.input and '.' in state.input:
+                        email_draft['recipient'] = state.input.strip()
+                        state.response = (f"Voy a enviar los resultados de búsqueda a {email_draft['recipient']} "
+                                    f"con asunto '{email_draft['subject']}'.\n\n"
+                                    f"¿Quieres enviarlo? (sí/no)")
+                        state.task_status["step"] = "email_confirm"
+                    else:
+                        state.response = "Por favor, proporciona una dirección de email válida."
+                
+                return None
+                    
+            elif current_step == "email_subject":
+                # Analizar el asunto con LLM
+                conversation_context = "\n".join([f"{msg['role']}: {msg['content']}" for msg in state.conversation_history[-3:]])
+                
+                prompt = [
+                    {
+                        "role": "system",
+                        "content": """Analiza la respuesta del usuario para determinar el asunto del correo electrónico.
+                        Responde en formato JSON con: {"valid": true|false, "subject": "asunto del correo"|null}
+                        
+                        Un asunto es válido si no está vacío y tiene algún sentido como asunto de correo."""
+                    },
+                    {
+                        "role": "user",
+                        "content": f"Contexto previo: {conversation_context}\n\nRespuesta del usuario: {state.input}"
+                    }
+                ]
+                
+                result = self._call_llm_for_json(prompt)
+                email_draft = state.context.get('email_draft', {})
+                
+                if result and result.get("valid", False) and result.get("subject"):
+                    email_draft['subject'] = result["subject"]
+                    
+                    if not email_draft.get('recipient'):
+                        state.response = "¿A quién quieres enviar estos resultados? (dirección de email)"
+                        state.task_status["step"] = "email_recipient"
+                    else:
+                        # Confirmar envío
+                        state.response = (f"Voy a enviar los resultados de búsqueda a {email_draft['recipient']} "
+                                    f"con asunto '{email_draft['subject']}'.\n\n"
+                                    f"¿Quieres enviarlo? (sí/no)")
+                        state.task_status["step"] = "email_confirm"
+                else:
+                    # Fallback básico
+                    if state.input.strip():
+                        email_draft['subject'] = state.input.strip()
+                        if not email_draft.get('recipient'):
+                            state.response = "¿A quién quieres enviar estos resultados? (dirección de email)"
+                            state.task_status["step"] = "email_recipient"
+                        else:
+                            state.response = (f"Voy a enviar los resultados de búsqueda a {email_draft['recipient']} "
+                                        f"con asunto '{email_draft['subject']}'.\n\n"
+                                        f"¿Quieres enviarlo? (sí/no)")
+                            state.task_status["step"] = "email_confirm"
+                    else:
+                        state.response = "El asunto no puede estar vacío. Por favor, proporciona un asunto."
+                
+                return None
+                    
+            elif current_step == "email_confirm":
+                # Analizar la confirmación con LLM
+                prompt = [
+                    {
+                        "role": "system",
+                        "content": """Determina si la respuesta del usuario es afirmativa o negativa respecto a enviar un correo.
+                        Responde en formato JSON con: {"decision": "confirm"|"cancel"|"unclear"}
+                        - confirm: Si el usuario quiere enviar el correo (sí, yes, confirmar, ok, etc.)
+                        - cancel: Si el usuario no quiere enviar el correo (no, cancel, cancelar, etc.)
+                        - unclear: Si no está claro lo que quiere el usuario"""
+                    },
+                    {
+                        "role": "user",
+                        "content": state.input if state.input else ""
+                    }
+                ]
+                
+                analysis = self._call_llm_for_json(prompt)
+                email_draft = state.context.get('email_draft', {})
+                
+                if analysis and "decision" in analysis:
+                    if analysis["decision"] == "confirm":
+                        success = self.send_email(
+                            to=email_draft['recipient'],
+                            subject=email_draft['subject'],
+                            body=email_draft['body']
+                        )
+                        
+                        if success:
+                            state.response = "¡Los resultados de la búsqueda han sido enviados por correo exitosamente!"
+                        else:
+                            state.response = "Lo siento, hubo un problema al enviar el correo con los resultados."
+                        
+                        # Limpiar el contexto y marcar la tarea como completada
+                        state.context.pop('email_draft', None)
+                        state.context["task_completed"] = True
+                        
+                        # Ir al nodo de memoria para guardar esta interacción
+                        return "memory_injection_node"
+                    
+                    elif analysis["decision"] == "cancel":
+                        state.response = "Envío cancelado. ¿Quieres hacer algo más con estos resultados de búsqueda?"
+                        state.context["task_completed"] = True
+                        return "memory_injection_node"
+                    
+                    else:  # unclear
+                        state.response = "Por favor responde 'sí' para confirmar o 'no' para cancelar."
+                        return None
+                else:
+                    # Fallback básico
+                    if state.input.lower() in ['sí', 'si', 'yes', 'confirmar', 'confirm']:
+                        success = self.send_email(
+                            to=email_draft['recipient'],
+                            subject=email_draft['subject'],
+                            body=email_draft['body']
+                        )
+                        
+                        if success:
+                            state.response = "¡Los resultados de la búsqueda han sido enviados por correo exitosamente!"
+                        else:
+                            state.response = "Lo siento, hubo un problema al enviar el correo con los resultados."
+                        
+                        # Limpiar el contexto y marcar la tarea como completada
+                        state.context.pop('email_draft', None)
+                        state.context["task_completed"] = True
+                        
+                        # Ir al nodo de memoria para guardar esta interacción
+                        return "memory_injection_node"
+                        
+                    elif state.input.lower() in ['no', 'cancelar', 'cancel']:
+                        state.response = "Envío cancelado. ¿Quieres hacer algo más con estos resultados de búsqueda?"
+                        state.context["task_completed"] = True
+                        return "memory_injection_node"
+                        
+                    else:
+                        state.response = "Por favor responde 'sí' para confirmar o 'no' para cancelar."
+                        return None
+                
+        except Exception as e:
+            logger.error(f"Error en _handle_composite_task con LLM: {e}")
+            # Usar un fallback básico si hay problemas con el LLM
+            
+        return None
+        
+    def _format_search_results_with_llm(self, search_results, search_query):
+        """
+        Usa el LLM para formatear los resultados de búsqueda en un email bien estructurado
+        """
+        try:
+            # Preparar los primeros 5 resultados para el LLM
+            results_text = ""
+            for i, result in enumerate(search_results[:5], 1):
+                title = result.get("title", "Sin título")
+                link = result.get("link", "Sin enlace")
+                snippet = result.get("snippet", "Sin descripción")
+                results_text += f"{i}. {title} - {link} - {snippet}\n\n"
+            
+            # Solicitar al LLM que cree un email formateado con los resultados
+            prompt = [
+                {
+                    "role": "system",
+                    "content": f"""Crea un correo electrónico bien formateado con los siguientes resultados de búsqueda para la consulta: "{search_query}".
+                    Responde en formato JSON con: {{"subject": "asunto del correo", "body": "cuerpo del correo", "recipient": null}}
+                    
+                    El asunto debe ser descriptivo e informativo.
+                    El cuerpo debe estar bien estructurado, ser profesional y fácil de leer.
+                    Recipient debe ser null ya que se pedirá al usuario."""
+                },
+                {
+                    "role": "user",
+                    "content": results_text
+                }
+            ]
+            
+            result = self._call_llm_for_json(prompt)
+            
+            if result and "body" in result and "subject" in result:
+                return {
+                    "subject": result["subject"],
+                    "body": result["body"],
+                    "recipient": None
+                }
+                
+        except Exception as e:
+            logger.error(f"Error en _format_search_results_with_llm: {e}")
+        
+        # Si hay problemas con el LLM, usar un formato básico
+        body = f"Aquí están los resultados de búsqueda para: {search_query}\n\n"
+        
+        for i, result in enumerate(search_results[:5], 1):
+            title = result.get("title", "Sin título")
+            link = result.get("link", "Sin enlace")
+            snippet = result.get("snippet", "Sin descripción")
+            
+            body += f"{i}. {title}\n"
+            body += f"   URL: {link}\n"
+            body += f"   Descripción: {snippet}\n\n"
+            
+        return {
+            "subject": f"Resultados de búsqueda: {search_query}",
+            "body": body,
+            "recipient": None
+        }
+
+    def _continue_email_sending(self, state: AICompanionState) -> Optional[str]:
+        """
+        Continúa el proceso de envío según el paso actual utilizando el LLM para analizar las respuestas
+        """
+        current_step = state.task_status.get("step")
+        email_draft = state.context.get('email_draft', {})
+        
+        try:
+            # Si estamos en un paso de confirmación
+            if current_step == "confirm":
+                # Procesamos la respuesta con el LLM para determinar si es afirmativa o negativa
+                prompt = [
+                    {
+                        "role": "system",
+                        "content": """Determina si la respuesta del usuario es afirmativa o negativa respecto a enviar un correo.
+                        Responde en formato JSON con: {"decision": "confirm"|"cancel"|"unclear", "explanation": "explicación"}
+                        - confirm: Si el usuario quiere enviar el correo (sí, yes, confirmar, ok, etc.)
+                        - cancel: Si el usuario no quiere enviar el correo (no, cancel, cancelar, etc.)
+                        - unclear: Si no está claro lo que quiere el usuario"""
+                    },
+                    {
+                        "role": "user",
+                        "content": state.input if state.input else ""
+                    }
+                ]
+                
+                # Llamar al LLM para analizar la respuesta
+                analysis = self._call_llm_for_json(prompt)
+                
+                if analysis and "decision" in analysis:
+                    if analysis["decision"] == "confirm":
+                        try:
+                            success = self.send_email(
+                                to=email_draft['recipient'],
+                                subject=email_draft['subject'],
+                                body=email_draft['body']
+                            )
+                            
+                            if success:
+                                state.response = "¡Correo enviado exitosamente!"
+                            else:
+                                state.response = "Lo siento, hubo un problema al enviar el correo."
+                        except Exception as e:
+                            logger.error(f"Error sending email: {e}")
+                            state.response = f"Lo siento, hubo un error al enviar el correo: {e}"
+                        
+                        # Limpiar el contexto y la tarea activa
+                        state.context['email_draft'] = {'recipient': None, 'subject': None, 'body': None}
+                        state.clear_active_task()
+                    
+                    elif analysis["decision"] == "cancel":
+                        state.response = "Envío cancelado. ¿Quieres redactar un nuevo correo?"
+                        state.clear_active_task()
+                    
+                    else:  # unclear
+                        state.response = "Por favor responde 'sí' para confirmar o 'no' para cancelar."
+                else:
+                    state.response = "Por favor responde 'sí' para confirmar o 'no' para cancelar."
+                
+                return None
+                
+            # Para otros pasos, usamos el LLM para procesar la entrada y extraer la información relevante
+            # Obtenemos el contexto completo de la conversación actual
+            conversation_context = "\n".join([
+                f"{msg['role']}: {msg['content']}" for msg in state.conversation_history[-3:]
+            ])
+            
+            if current_step == "recipient":
+                # Usamos el LLM para extraer o validar el correo
+                prompt = [
+                    {
+                        "role": "system",
+                        "content": """Analiza la respuesta del usuario y extrae o valida una dirección de correo electrónico.
+                        Responde en formato JSON con: {"valid": true|false, "email": "email@example.com"|null, "next_step": "subject"|"body"|"confirm"|null}
+                        
+                        Si encuentras una dirección de email válida, establece valid=true y proporciona el email.
+                        Si no encuentras un email válido, establece valid=false y email=null.
+                        
+                        También determina cuál debería ser el siguiente paso basado en la información existente:
+                        - "subject": Si se necesita preguntar por el asunto
+                        - "body": Si se necesita preguntar por el cuerpo del mensaje
+                        - "confirm": Si ya se tienen todos los datos y se debería confirmar
+                        - null: Si no puedes determinar el siguiente paso"""
+                    },
+                    {
+                        "role": "user",
+                        "content": f"Contexto previo: {conversation_context}\n\nRespuesta del usuario: {state.input}"
+                    }
+                ]
+                
+                result = self._call_llm_for_json(prompt)
+                
+                if result and result.get("valid", False) and result.get("email"):
+                    email_draft['recipient'] = result["email"]
+                    
+                    # Determinar el siguiente paso
+                    next_step = result.get("next_step")
+                    if next_step == "subject" or not email_draft.get('subject'):
+                        state.response = "¿Cuál es el asunto del correo?"
+                        state.task_status["step"] = "subject"
+                    elif next_step == "body" or not email_draft.get('body'):
+                        state.response = "¿Qué mensaje quieres enviar en el correo?"
+                        state.task_status["step"] = "body"
+                    else:
+                        # Si tenemos toda la información necesaria, pasar a confirmar
+                        state.response = (f"Voy a enviar un correo a {email_draft['recipient']} "
+                                    f"con asunto '{email_draft['subject']}' y el siguiente mensaje:\n\n"
+                                    f"{email_draft['body']}\n\n"
+                                    f"¿Quieres enviarlo? (sí/no)")
+                        state.task_status["step"] = "confirm"
+                else:
+                    state.response = "Por favor, proporciona una dirección de email válida."
+                
+                return None
+            
+            elif current_step == "subject":
+                # Procesar el asunto con LLM
+                prompt = [
+                    {
+                        "role": "system",
+                        "content": """Analiza la respuesta del usuario para determinar el asunto del correo electrónico.
+                        Responde en formato JSON con: {"valid": true|false, "subject": "asunto del correo"|null, "next_step": "recipient"|"body"|"confirm"|null}
+                        
+                        Un asunto es válido si no está vacío y tiene algún sentido como asunto de correo.
+                        También determina cuál debería ser el siguiente paso basado en la información existente."""
+                    },
+                    {
+                        "role": "user",
+                        "content": f"Contexto previo: {conversation_context}\n\nRespuesta del usuario: {state.input}"
+                    }
+                ]
+                
+                result = self._call_llm_for_json(prompt)
+                
+                if result and result.get("valid", False) and result.get("subject"):
+                    email_draft['subject'] = result["subject"]
+                    
+                    # Determinar siguiente paso
+                    next_step = result.get("next_step")
+                    if next_step == "recipient" or not email_draft.get('recipient'):
+                        state.response = "¿A quién quieres enviar el correo? (dirección de email)"
+                        state.task_status["step"] = "recipient"
+                    elif next_step == "body" or not email_draft.get('body'):
+                        state.response = "¿Qué mensaje quieres enviar en el correo?"
+                        state.task_status["step"] = "body"
+                    else:
+                        # Confirmar
+                        state.response = (f"Voy a enviar un correo a {email_draft['recipient']} "
+                                    f"con asunto '{email_draft['subject']}' y el siguiente mensaje:\n\n"
+                                    f"{email_draft['body']}\n\n"
+                                    f"¿Quieres enviarlo? (sí/no)")
+                        state.task_status["step"] = "confirm"
+                else:
+                    state.response = "El asunto no puede estar vacío. Por favor, proporciona un asunto válido."
+                
+                return None
+            
+            elif current_step == "body":
+                # Procesar el cuerpo con LLM
+                prompt = [
+                    {
+                        "role": "system",
+                        "content": """Analiza la respuesta del usuario para determinar el cuerpo del correo electrónico.
+                        Responde en formato JSON con: {"valid": true|false, "body": "cuerpo del correo"|null, "next_step": "recipient"|"subject"|"confirm"|null}
+                        
+                        Un cuerpo es válido si no está vacío y tiene algún contenido que transmitir.
+                        También determina cuál debería ser el siguiente paso basado en la información existente."""
+                    },
+                    {
+                        "role": "user",
+                        "content": f"Contexto previo: {conversation_context}\n\nRespuesta del usuario: {state.input}"
+                    }
+                ]
+                
+                result = self._call_llm_for_json(prompt)
+                
+                if result and result.get("valid", False) and result.get("body"):
+                    email_draft['body'] = result["body"]
+                    
+                    # Determinar siguiente paso
+                    next_step = result.get("next_step")
+                    if next_step == "recipient" or not email_draft.get('recipient'):
+                        state.response = "¿A quién quieres enviar el correo? (dirección de email)"
+                        state.task_status["step"] = "recipient"
+                    elif next_step == "subject" or not email_draft.get('subject'):
+                        state.response = "¿Cuál es el asunto del correo?"
+                        state.task_status["step"] = "subject"
+                    else:
+                        # Confirmar
+                        state.response = (f"Voy a enviar un correo a {email_draft['recipient']} "
+                                    f"con asunto '{email_draft['subject']}' y el siguiente mensaje:\n\n"
+                                    f"{email_draft['body']}\n\n"
+                                    f"¿Quieres enviarlo? (sí/no)")
+                        state.task_status["step"] = "confirm"
+                else:
+                    state.response = "El mensaje no puede estar vacío. Por favor, proporciona un contenido para el correo."
+                
+                return None
+        
+        except Exception as e:
+            logger.error(f"Error en _continue_email_sending con LLM: {e}")
+            # Si hay algún error con el LLM, usar un fallback básico
+            if current_step == "recipient":
+                if '@' in state.input and '.' in state.input:
+                    email_draft['recipient'] = state.input.strip()
+                    state.response = "¿Cuál es el asunto del correo?"
+                    state.task_status["step"] = "subject"
+                else:
+                    state.response = "No pude identificar una dirección de email válida. Por favor, inténtalo de nuevo."
+            elif current_step == "subject":
+                if state.input.strip():
+                    email_draft['subject'] = state.input.strip()
+                    state.response = "¿Qué mensaje quieres enviar en el correo?"
+                    state.task_status["step"] = "body"
+                else:
+                    state.response = "El asunto no puede estar vacío. Por favor, proporciona un asunto."
+            elif current_step == "body":
+                if state.input.strip():
+                    email_draft['body'] = state.input.strip()
+                    state.response = (f"Voy a enviar un correo a {email_draft['recipient']} "
+                                f"con asunto '{email_draft['subject']}' y el siguiente mensaje:\n\n"
+                                f"{email_draft['body']}\n\n"
+                                f"¿Quieres enviarlo? (sí/no)")
+                    state.task_status["step"] = "confirm"
+                else:
+                    state.response = "El mensaje no puede estar vacío. Por favor, proporciona un mensaje."
+            elif current_step == "confirm":
+                if state.input.lower() in ['sí', 'si', 'yes', 'confirmar', 'confirm']:
+                    state.response = "¡Correo enviado exitosamente!"
+                    state.clear_active_task()
+                else:
+                    state.response = "Envío cancelado. ¿Quieres redactar un nuevo correo?"
+                    state.clear_active_task()
+        
+        return None
+        
+    def _extract_email_details(self, user_input: str) -> Dict[str, str]:
+        """
+        Usa un LLM para extraer detalles del correo del input del usuario
+        """
+        details = {
+            "recipient": None,
+            "subject": None,
+            "body": None
+        }
+        
+        try:
+            # Si no hay input del usuario, no podemos extraer información
+            if not user_input:
+                return details
+                
+            # Preparar el prompt para el LLM
+            prompt = [
+                {
+                    "role": "system",
+                    "content": """Eres un asistente especializado en extraer información para enviar correos electrónicos.
+                    Tu tarea es analizar el texto del usuario e identificar:
+                    - Destinatario del correo (dirección de email)
+                    - Asunto del correo
+                    - Cuerpo del mensaje
+                    
+                    Responde solo en formato JSON con estos tres campos: {"recipient": "email@ejemplo.com", "subject": "Asunto del correo", "body": "Cuerpo del mensaje"}.
+                    Si algún dato no está presente, coloca null en ese campo."""
+                },
+                {
+                    "role": "user",
+                    "content": user_input
+                }
+            ]
+            
+            # Llamada a la API de Groq
+            headers = {
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {self.groq_api_key}"
+            }
+            
+            data = {
+                "model": self.groq_model,
+                "messages": prompt,
+                "response_format": {"type": "json_object"},
+                "temperature": 0.1,
+                "max_tokens": 500
+            }
+            
+            # Realizar la solicitud a la API
+            response = requests.post(
+                self.llm_api_url,
+                headers=headers,
+                json=data
+            )
+            
+            # Verificar si la respuesta fue exitosa
+            if response.status_code == 200:
+                result = response.json()
+                content = result["choices"][0]["message"]["content"]
+                
+                # Parsear el JSON retornado por el LLM
+                parsed_details = json.loads(content)
+                
+                # Actualizar los detalles con la información extraída por el LLM
+                if parsed_details.get("recipient"):
+                    details["recipient"] = parsed_details["recipient"]
+                if parsed_details.get("subject"):
+                    details["subject"] = parsed_details["subject"]
+                if parsed_details.get("body"):
+                    details["body"] = parsed_details["body"]
+                    
+                logger.info(f"LLM extrajo detalles del correo: {details}")
+            else:
+                logger.error(f"Error en la API de LLM: {response.status_code} - {response.text}")
+                
+        except Exception as e:
+            logger.error(f"Error al extraer detalles del correo con LLM: {str(e)}")
+            
+        # Si el LLM no logró extraer la información, intentar con un enfoque básico
+        if not any(details.values()):
+            logger.info("Fallback: Usando método básico para extraer detalles del correo")
+            # Buscar destinatario (email básico)
+            words = user_input.split()
+            for word in words:
+                if '@' in word and '.' in word:
+                    details["recipient"] = word.strip(',.:;"\'')
+                    break
+        
+        return details
+        
+    def send_email(self, to: str, subject: str, body: str) -> bool:
+        """
+        Envía un correo electrónico usando Gmail API
+        """
+        try:
+            message = MIMEText(body)
+            message['to'] = to
+            message['subject'] = subject
+            
+            raw = base64.urlsafe_b64encode(message.as_bytes()).decode()
+            
+            self.service.users().messages().send(
+                userId='me',
+                body={'raw': raw}
+            ).execute()
+            
+            logger.info(f"Email sent successfully to {to}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error sending email: {e}")
+            # Get more details from the exception if available
+            if hasattr(e, 'response') and e.response:
+                try:
+                    error_detail = e.response.json()
+                    logger.error(f"API error details: {error_detail}")
+                except:
+                    logger.error(f"HTTP Status: {e.response.status_code}")
+                    logger.error(f"Response content: {e.response.text}")
+            
+            return False
+
+# When this module is run directly, perform a test of the Gmail sender
+if __name__ == "__main__":
+    try:
+        # Initialize the sender
+        print("Initializing Gmail Sender...")
+        gmail_sender = GmailSender()
+        print("Gmail Sender initialized successfully.")
+        
+        # Show available credentials
+        print(f"Credentials loaded from: {os.path.join(os.path.dirname(__file__), '../../token.json')}")
+        print(f"Scopes: ['https://www.googleapis.com/auth/gmail.send', 'https://www.googleapis.com/auth/gmail.compose', 'https://www.googleapis.com/auth/gmail.modify']")
+        
+        # Just show configuration is available, don't actually send emails in test
+        print("Gmail API service initialized.")
+        print("Module is working correctly!")
+    except Exception as e:
+        print(f"Error during initialization: {e}")

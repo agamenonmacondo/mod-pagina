@@ -1,0 +1,23 @@
+{
+  "timestamp": "2025-06-08 05:41:50",
+  "mode": "fallback",
+  "total_tools": 12,
+  "tools": {
+    "search": "Buscar información en internet",
+    "memory": "Guardar y recuperar información personal",
+    "gmail": "Enviar emails",
+    "calendar": "Gestionar eventos de calendario",
+    "image": "Generar imágenes con IA",
+    "vision": "Analizar imágenes",
+    "openai_tts": "Convertir texto a voz",
+    "multimodal_memory": "Memoria multimodal avanzada",
+    "meet": "Gestionar reuniones de Google Meet",
+    "file_manager": "Gestión de archivos",
+    "playwright": "Automatización web",
+    "groq_speech": "Speech to text y text to speech con Groq"
+  },
+  "schemas": {},
+  "test_results": {
+    "fallback": "Herramientas predefinidas cargadas"
+  }
+}

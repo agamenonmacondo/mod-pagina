@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ava-graph-bot"
+version = "0.1.0"
+description = "Ava Graph Bot with LangGraph Platform"
+requires-python = ">=3.11"
+dependencies = [
+    "langgraph>=0.2.0",
+    "langchain-core>=0.3.0",
+    "langchain-openai>=0.2.0",
+    "groq>=0.4.0",
+    "grpcio>=1.65.0",
+    "grpcio-tools>=1.65.0",
+    "python-dotenv>=1.0.0",
+    "pydantic>=2.0.0",
+    "typing-extensions>=4.0.0"
+]
+
+[project.optional-dependencies]
+dev = [
+    "langgraph-cli[inmem]>=0.1.0"
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["*"]

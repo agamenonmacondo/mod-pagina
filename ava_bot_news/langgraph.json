@@ -1,0 +1,7 @@
+{
+  "dependencies": ["."],
+  "graphs": {
+    "ava_agent": "./ava_graph_main.py:graph"
+  },
+  "env": ".env"
+}

@@ -1,0 +1,12 @@
+{
+  "id": "google_gemini_ultra",
+  "topic": "google_ai",
+  "title": "Google Gemini Ultra supera a GPT-4 en benchmarks",
+  "subtitle": "Nuevo modelo multimodal de Google alcanza récords de rendimiento",
+  "preview": "Google ha presentado Gemini Ultra, su modelo de IA más potente que ha logrado superar a GPT-4 en múltiples benchmarks estándar. El modelo destaca especialmente en tareas de razonamiento matemático y comprensión de código, estableciendo nuevos estándares en la industria.",
+  "generated_at": "2025-06-16T20:53:49.722653",
+  "quality_score": 4,
+  "content_length": 1100,
+  "image_url": "https://images.unsplash.com/photo-1573804633927-bfcbcd909acd?w=600&h=400",
+  "file_url": "/news/google_gemini_ultra.json"
+}

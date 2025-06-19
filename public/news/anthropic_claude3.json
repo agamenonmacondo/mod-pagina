@@ -1,0 +1,12 @@
+{
+  "id": "anthropic_claude3",
+  "topic": "anthropic",
+  "title": "Anthropic lanza Claude 3: El competidor directo de GPT-4",
+  "subtitle": "Nuevo modelo enfocado en seguridad y alineación de IA",
+  "preview": "Anthropic ha presentado Claude 3, su modelo de lenguaje más avanzado diseñado con un enfoque especial en la seguridad y alineación de IA. El modelo incorpora técnicas innovadoras de Constitutional AI para reducir sesgos y mejorar la coherencia en respuestas complejas.",
+  "generated_at": "2025-06-16T20:53:49.722653",
+  "quality_score": 4,
+  "content_length": 1250,
+  "image_url": "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=600&h=400",
+  "file_url": "/news/anthropic_claude3.json"
+}
