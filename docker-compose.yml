@@ -69,7 +69,7 @@ services:
   # Next.js Frontend
   nextjs-app:
     build: 
-      context: ./firebase_pagina
+      context: .
       dockerfile: Dockerfile
     ports:
       - "3000:3000"
@@ -80,7 +80,7 @@ services:
       - webhook-news
       - webhook-chat
     volumes:
-      - ./firebase_pagina/public:/app/public
+      - ./public:/app/public
     networks:
       - ava-network
 
