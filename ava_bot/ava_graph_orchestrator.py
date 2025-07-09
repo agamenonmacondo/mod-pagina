@@ -6,11 +6,12 @@ import json
 import re
 from groq import Groq
 import os
+from base_context_agent import BaseContextAgent
 
 # ✅ IMPORTACIÓN CORRECTA - Importa la clase, no la función
 from mcp_server.run_server import CleanMCPServer
 
-class OrchestratorNode:
+class OrchestratorNode(BaseContextAgent):
     """Nodo coordinador que ejecuta planes paso a paso"""
     
     def __init__(self):
@@ -141,14 +142,75 @@ class OrchestratorNode:
             state["error_message"] = f"Error en orchestrator: {e}"
             return state
     
+    def _build_context_for_llm(self, state: AgentState, tool_name: str, objective: str) -> str:
+        """CONTEXTO COMPLETO PARA OPTIMIZACIÓN"""
+        
+        # ✅ AGREGAR: USAR BaseContextAgent PARA EXTRAER DATOS
+        context = self.get_complete_context(state)
+        extracted_data = self.extract_all_specific_data(context)
+        formatted_data = self.format_extracted_data(extracted_data)
+        
+        conversation_history = state.get("conversation_history", [])
+        context_memory = state.get("context_memory", {})
+
+        context_parts = [
+            "=== CONTEXTO DE CONVERSACIÓN ===",
+            ""
+        ]
+        
+        # ✅ AGREGAR: INCLUIR DATOS EXTRAÍDOS
+        if formatted_data.strip() != "📊 **DATOS ESPECÍFICOS:**":
+            context_parts.append("=== INFORMACIÓN ESPECÍFICA DISPONIBLE ===")
+            context_parts.append(formatted_data)
+        
+        # Existing logic for conversation_history and context_memory
+        if conversation_history:
+            context_parts.append("HISTORIAL DE CONVERSACIÓN:")
+            for i, message in enumerate(conversation_history[-3:]):
+                if hasattr(message, 'content'):
+                    role = "Usuario" if isinstance(message, HumanMessage) else "Asistente"
+                    content = str(message.content)[:200]
+                    context_parts.append(f"{role}: {content}")
+        
+        return "\n".join(context_parts)
+
     def _optimize_arguments_with_llm(self, arguments: dict, state: AgentState, tool_name: str, objective: str) -> dict:
         """USAR LLM GROQ + LLAMA MAVERICK PARA OPTIMIZAR ARGUMENTOS"""
         try:
+            # ⚠️ EXCEPCIÓN ESPECIAL PARA VISION: NO OPTIMIZAR RUTAS DE ARCHIVOS
+            if tool_name.lower() == "vision" and "image_path" in arguments:
+                image_path = arguments.get("image_path", "")
+                # Si la ruta contiene una ruta completa, NO optimizar
+                if os.path.sep in image_path or ":" in image_path:
+                    print(f"🔒 VISION: Preservando ruta completa sin optimización: {image_path}")
+                    return arguments
+            
             # Construir contexto para el LLM
             context_text = self._build_context_for_llm(state, tool_name, objective)
             
             # ✅ OBTENER SCHEMA ESPECÍFICO DE LA HERRAMIENTA
             tool_schema_info = self._get_tool_schema_formatted(tool_name)
+
+            conversation_history = state.get("conversation_history", [])
+            context_memory = state.get("context_memory", {})
+            
+            # ✅ AGREGAR: EXTRAER INFORMACIÓN PARA EL PROMPT
+            context = self.get_complete_context(state)
+            extracted_data = self.extract_all_specific_data(context)
+            
+            # ✅ CREAR SECCIÓN DE INFORMACIÓN PARA INCLUIR EN EL PROMPT
+            info_for_email = ""
+            if tool_name.lower() == "gmail" and any(extracted_data.values()):
+                info_for_email = f"""
+=== INFORMACIÓN PARA INCLUIR EN EL EMAIL ===
+INFORMACIÓN DEL HISTORIAL:
+Información sobre la consulta realizada.
+
+RESULTADOS DE HERRAMIENTAS EJECUTADAS:
+{self._format_tool_results_for_email(state)}
+
+=== FIN INFORMACIÓN PARA EMAIL ===
+"""
             
             # PROMPT ESPECÍFICO PARA OPTIMIZACIÓN DE ARGUMENTOS
             system_prompt = f"""Eres un asistente experto en optimizar argumentos para herramientas automatizadas.
@@ -160,6 +222,7 @@ TU TAREA:
 4. Para Gmail: SIEMPRE extraer información relevante del historial y crear un email completo
 5. Para Search: Mejorar las queries con contexto específico
 6. Para Playwright: Optimizar URLs y queries de extracción
+7. Para Vision: NUNCA modificar rutas completas de archivos (image_path)
 
 SCHEMA DE LA HERRAMIENTA {tool_name.upper()}:
 {tool_schema_info}
@@ -171,8 +234,15 @@ INSTRUCCIONES ESPECÍFICAS PARA GMAIL:
 - Usar formato profesional con saludo y despedida
 - Subject debe ser descriptivo y específico
 
+INSTRUCCIONES ESPECÍFICAS PARA VISION:
+- Si image_path contiene una ruta completa (con \\ o /), NO la modifiques
+- Solo optimiza otros campos como "task" o "action"
+- PRESERVA EXACTAMENTE las rutas de archivos
+
 CONTEXTO DE LA CONVERSACIÓN:
 {context_text}
+
+{info_for_email}
 
 ARGUMENTOS ORIGINALES:
 {json.dumps(arguments, indent=2)}
@@ -181,7 +251,7 @@ HERRAMIENTA: {tool_name.upper()}
 OBJETIVO: {objective}
 
 RESPONDE SOLO CON UN JSON VÁLIDO CON LOS ARGUMENTOS OPTIMIZADOS USANDO ÚNICAMENTE LOS CAMPOS DEL SCHEMA:"""
-
+            
             user_prompt = f"Optimiza estos argumentos para {tool_name} considerando el contexto completo de la conversación."
             
             print("Consultando LLM para optimizar argumentos...")
@@ -222,6 +292,16 @@ RESPONDE SOLO CON UN JSON VÁLIDO CON LOS ARGUMENTOS OPTIMIZADOS USANDO ÚNICAME
             # Parsear la respuesta JSON
             optimized_args = self._parse_llm_response(llm_response, arguments)
             
+            # ⚠️ VERIFICACIÓN ADICIONAL PARA VISION: Restaurar ruta original si fue modificada
+            if tool_name.lower() == "vision" and "image_path" in arguments and "image_path" in optimized_args:
+                original_path = arguments["image_path"]
+                optimized_path = optimized_args["image_path"]
+                
+                # Si la ruta original era completa pero la optimizada no, restaurar
+                if (os.path.sep in original_path or ":" in original_path) and original_path != optimized_path:
+                    print(f"🔧 VISION: Restaurando ruta original: {original_path}")
+                    optimized_args["image_path"] = original_path
+            
             print("Argumentos optimizados por LLM")
             return optimized_args
         
@@ -229,6 +309,26 @@ RESPONDE SOLO CON UN JSON VÁLIDO CON LOS ARGUMENTOS OPTIMIZADOS USANDO ÚNICAME
             print(f"Error al optimizar con LLM: {e}")
             print("Usando optimización de respaldo...")
             return self._fallback_optimization(arguments, state, tool_name)
+
+    def _format_tool_results_for_email(self, state: AgentState) -> str:
+        """Formatear resultados de herramientas para emails"""
+        tool_result = state.get("tool_result", "")
+        if not tool_result:
+            return "No hay resultados disponibles."
+        
+        # ✅ USAR BaseContextAgent PARA EXTRAER DATOS
+        context = self.get_complete_context(state)
+        extracted_data = self.extract_all_specific_data(context)
+        
+        formatted = ""
+        if extracted_data['urls']:
+            formatted += f"Enlaces encontrados: {chr(10).join(extracted_data['urls'][:3])}\n"
+        if extracted_data['prices']:
+            formatted += f"Precios mencionados: {', '.join(extracted_data['prices'])}\n"
+        if extracted_data['hotels']:
+            formatted += f"Hoteles encontrados: {', '.join(extracted_data['hotels'])}\n"
+        
+        return formatted if formatted else tool_result[:500]
 
     def _get_tool_schema_formatted(self, tool_name: str) -> str:
         """Obtener schema formateado de una herramienta específica"""
@@ -497,136 +597,6 @@ EJEMPLO CORRECTO PARA VUELOS:
         email_parts.append("Ava Assistant")
         
         return "\n".join(email_parts)
-
-    def _build_context_for_llm(self, state: AgentState, tool_name: str, objective: str) -> str:
-        """Construir contexto relevante para el LLM incluyendo tool_result"""
-        context_parts = []
-        
-        # 🔧 OBTENER DATOS DEL STATE
-        conversation_history = state.get("conversation_history", [])
-        tool_result = state.get("tool_result", "")
-        plan_status = state.get("plan_status", {})
-        results = plan_status.get("results", [])
-        
-        # 🔧 EXTRAER INFORMACIÓN ESPECÍFICA PARA GMAIL
-        if tool_name == "gmail":
-            context_parts.append("=== INFORMACIÓN PARA INCLUIR EN EL EMAIL ===")
-            
-            # 1. Información del historial de conversación
-            email_content_from_history = self._extract_detailed_email_content(conversation_history)
-            if email_content_from_history:
-                context_parts.append("INFORMACIÓN DEL HISTORIAL:")
-                context_parts.append(email_content_from_history)
-                context_parts.append("")
-            
-            # 2. Resultados de herramientas anteriores
-            if results:
-                context_parts.append("RESULTADOS DE HERRAMIENTAS EJECUTADAS:")
-                for i, result in enumerate(results, 1):
-                    tool_used = result.get('tool', 'UNKNOWN').upper()
-                    success = result.get('success', False)
-                    tool_data = result.get('result', '')
-                    
-                    if success and tool_data:
-                        context_parts.append(f"{i}. HERRAMIENTA {tool_used}:")
-                        # Formatear resultado para email
-                        formatted_result = self._format_tool_result_for_email(tool_used, tool_data)
-                        context_parts.append(formatted_result)
-                        context_parts.append("")
-            
-            # 3. Tool result actual (si existe)
-            if tool_result:
-                context_parts.append("RESULTADO ACTUAL:")
-                context_parts.append(tool_result)
-                context_parts.append("")
-            
-            context_parts.append("=== FIN INFORMACIÓN PARA EMAIL ===")
-            context_parts.append("")
-        
-        # Contexto general de conversación (últimos mensajes)
-        context_parts.append("=== CONTEXTO DE CONVERSACIÓN ===")
-        for i, message in enumerate(conversation_history[-3:]):  # Últimos 3 mensajes
-            if hasattr(message, 'content'):
-                role = "Usuario" if isinstance(message, HumanMessage) else "Asistente"
-                content = message.content[:800]  # Más contenido para Gmail
-                context_parts.append(f"{role}: {content}")
-        
-        context_text = "\n".join(context_parts)
-        
-        # Instrucciones específicas para Gmail
-        if tool_name == "gmail":
-            context_text += f"\n\nINSTRUCCIÓN ESPECÍFICA: Usa TODA la información detallada marcada arriba para crear un email completo y útil. Incluye precios, enlaces, características específicas de las herramientas ejecutadas."
-        
-        return context_text
-
-    def _extract_email_content_simple(self, conversation_history: list) -> str:
-        """Extracción simple de contenido para email"""
-        content_parts = []
-        
-        for message in conversation_history[-3:]:
-            if hasattr(message, 'content'):
-                content = message.content
-                
-                if "iphone" in content.lower() or "precio" in content.lower():
-                    lines = content.split('\n')
-                    for line in lines:
-                        if any(keyword in line.lower() for keyword in 
-                               ['precio', '$', 'usd', 'cop', 'amazon', 'ebay']):
-                            if line.strip() and line.strip() not in content_parts:
-                                content_parts.append(line.strip())
-        
-        if content_parts:
-            return f"""Información solicitada sobre iPhone 13 Pro Max:
-
-{chr(10).join(content_parts[:8])}
-
-Esta información fue recopilada según tu consulta.
-
-Saludos,
-Ava Assistant"""
-        
-        return "Información solicitada adjunta en este correo."
-
-    def _extract_detailed_email_content(self, conversation_history: list) -> str:
-        """Extraer información detallada para email"""
-        email_sections = []
-        
-        for message in conversation_history:
-            if hasattr(message, 'content'):
-                content = message.content
-                
-                # Buscar secciones con información valiosa
-                if any(keyword in content.lower() for keyword in 
-                       ["gibson", "guitarra", "iphone", "amazon", "precio", "us$"]):
-                    
-                    # Extraer líneas relevantes
-                    content_lines = content.split('\n')
-                    
-                    for line in content_lines:
-                        line = line.strip()
-                        # Buscar líneas con precios o información valiosa
-                        if any(keyword in line.lower() for keyword in 
-                               ['precio:', 'us$', '$', 'enlace:', 'http', 'amazon.com', 'gibson']):
-                            if line and len(line) > 10:  # Evitar líneas muy cortas
-                                email_sections.append(line)
-                        
-                        # Buscar características del producto
-                        elif any(keyword in line.lower() for keyword in 
-                                 ['gb', 'pro max', 'reacondicionado', 'entrega', 'vendido por', 'les paul', 'stratocaster']):
-                            if line and len(line) > 10:
-                                email_sections.append(line)
-        
-        if email_sections:
-            return f"""INFORMACIÓN ENCONTRADA:
-
-{chr(10).join(email_sections[:15])}
-
-Esta información fue recopilada según tu consulta.
-
-Saludos,
-Ava Assistant"""
-        
-        return "Información sobre la consulta realizada."
 
     def _parse_llm_response(self, llm_response: str, fallback_arguments: dict) -> dict:
         """Parsear respuesta JSON del LLM"""

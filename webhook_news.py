@@ -86,9 +86,12 @@ class AutoNewsManager:
         try:
             self.log("🚀 Ejecutando ava_graph_news.py...")
             
+            # Usar el Python del entorno virtual actual
+            python_executable = sys.executable
+            
             # Ejecutar el script con input automático
             process = subprocess.Popen([
-                'python', str(NEWS_GENERATOR_SCRIPT)
+                python_executable, str(NEWS_GENERATOR_SCRIPT)
             ], 
             stdin=subprocess.PIPE, 
             stdout=subprocess.PIPE, 

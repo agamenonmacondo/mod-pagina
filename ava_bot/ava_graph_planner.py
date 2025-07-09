@@ -10,11 +10,12 @@ from datetime import datetime
 from dotenv import load_dotenv
 from ava_graph_state import AgentState
 from role_promt import get_role_prompt
+from base_context_agent import BaseContextAgent
 
 load_dotenv()
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
-class PlannerNode:
+class PlannerNode(BaseContextAgent):
     """🎯 PLANNER NODE - Crear planes de ejecución"""
     
     def __init__(self):
@@ -93,6 +94,11 @@ class PlannerNode:
         context_memory = state.get("context_memory", [])
         conversation_history = state.get("conversation_history", [])
         
+        # ✅ AGREGAR: USAR BaseContextAgent PARA EXTRAER DATOS
+        context = self.get_complete_context(state)
+        extracted_data = self.extract_all_specific_data(context)
+        formatted_data = self.format_extracted_data(extracted_data)
+        
         # 🧠 CONTEXTO DE CONVERSACIÓN ANTERIOR
         conversation_context = ""
         if conversation_history:
@@ -124,6 +130,8 @@ class PlannerNode:
 {conversation_context}
 
 {tools_context}
+
+{formatted_data}
 
 🛠️ **HERRAMIENTAS DISPONIBLES CON SCHEMAS COMPLETOS:**
 {detailed_tools_info}

@@ -7,432 +7,316 @@ import traceback
 import importlib.util
 from pathlib import Path
 from datetime import datetime
-from typing import Dict, Any, Optional, Union
+from typing import Dict, Any, Optional
 from flask import Flask, jsonify, request, send_from_directory
-from flask_cors import CORS, cross_origin
+from flask_cors import CORS
 from werkzeug.utils import secure_filename
 import base64
 from PIL import Image
 import io
 
-# ✅ CONFIGURACIÓN DE LOGGING AVANZADO
+# CONFIGURACIÓN DE LOGGING
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(sys.stdout),
-        logging.FileHandler('webhook_chat.log')
+        logging.FileHandler('webhook_chat.log', encoding='utf-8')
     ]
 )
 logger = logging.getLogger(__name__)
 
+# CONFIGURACIÓN FLASK
 app = Flask(__name__)
-CORS(app, origins=["http://localhost:3000", "http://192.168.0.5:3000"])
+CORS(app)
 
-# ✅ CONFIGURACIÓN DE DIRECTORIOS MEJORADA
+# CONFIGURACIÓN DE DIRECTORIOS
 BASE_DIR = Path(r"c:\Users\h\Downloads\pagina ava")
-AVA_SHARED_DIR = BASE_DIR / "ava_bot" / "shared_files"
-GENERATED_IMAGES_DIR = BASE_DIR / "ava_bot" / "generated_images"
+AVA_BOT_DIR = BASE_DIR / "ava_bot"
+AVA_SHARED_DIR = AVA_BOT_DIR / "shared_files"
+GENERATED_IMAGES_DIR = AVA_BOT_DIR / "generated_images"
 CHAT_UPLOADS_DIR = BASE_DIR / "chat_uploads"
 CHAT_LOGS_DIR = BASE_DIR / "chat_logs"
-USER_IMAGES_DIR = BASE_DIR / "user_images"  # Nueva carpeta para imágenes de usuario
-PROCESSED_IMAGES_DIR = BASE_DIR / "processed_images"  # Nueva carpeta para imágenes procesadas
+USER_IMAGES_DIR = BASE_DIR / "user_images"
 
-# Configuración de archivos permitidos
+# CONFIGURACIÓN
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp', 'tiff', 'pdf', 'txt', 'docx', 'mp3', 'wav', 'mp4', 'avi'}
 MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB
 
+# MEMORIA PERSISTENTE PARA INSTANCIAS AVAGRAPHBOT
+ava_instances = {}
+
 def create_directories():
-    """Crear todas las carpetas necesarias"""
-    directories = [
-        AVA_SHARED_DIR, GENERATED_IMAGES_DIR, CHAT_UPLOADS_DIR, 
-        CHAT_LOGS_DIR, USER_IMAGES_DIR, PROCESSED_IMAGES_DIR
-    ]
+    """Crear carpetas necesarias"""
+    directories = [AVA_SHARED_DIR, GENERATED_IMAGES_DIR, CHAT_UPLOADS_DIR, CHAT_LOGS_DIR, USER_IMAGES_DIR]
     
     for directory in directories:
-        directory.mkdir(parents=True, exist_ok=True)
-        logger.info(f"📁 Directorio verificado: {directory}")
+        try:
+            directory.mkdir(parents=True, exist_ok=True)
+            logger.info(f"Directorio verificado: {directory}")
+        except Exception as e:
+            logger.error(f"Error creando directorio {directory}: {e}")
 
-create_directories()
-
-logger.info("💬 Webhook CHAT Avanzado con AgenteAVA iniciado")
-logger.info(f"🤖 Directorio AVA: {BASE_DIR / 'ava_bot'}")
-logger.info(f"📁 Directorio uploads: {CHAT_UPLOADS_DIR}")
-logger.info(f"🖼️ Directorio imágenes generadas: {GENERATED_IMAGES_DIR}")
-logger.info(f"👤 Directorio imágenes usuario: {USER_IMAGES_DIR}")
-
-def create_fresh_ava_instance():
-    """Crear una nueva instancia de AVA con manejo de errores mejorado"""
+def import_ava_graph_bot():
+    """Importar AvaGraphBot siguiendo el patrón del webhook_server"""
     try:
-        logger.info("🤖 Iniciando creación de nueva instancia AVA...")
+        logger.info("Importando AvaGraphBot...")
         
-        # Limpiar módulos previos para evitar conflictos
-        modules_to_remove = [name for name in sys.modules.keys() if 'ava_graph_bot' in name]
-        for module_name in modules_to_remove:
-            del sys.modules[module_name]
-            logger.debug(f"🧹 Módulo limpiado: {module_name}")
+        # Verificar archivo existe
+        ava_file = AVA_BOT_DIR / "ava_graph_bot.py"
+        if not ava_file.exists():
+            logger.error(f"Archivo no encontrado: {ava_file}")
+            return None, None
         
-        logger.info(f"🧹 Limpiados {len(modules_to_remove)} módulos previos")
+        # Añadir directorio al PATH
+        ava_bot_path = str(AVA_BOT_DIR)
+        if ava_bot_path not in sys.path:
+            sys.path.insert(0, ava_bot_path)
+            logger.info(f"Añadido al PATH: {ava_bot_path}")
         
-        # Agregar el directorio AVA_BOT al PATH de Python
-        ava_bot_dir = str(BASE_DIR / "ava_bot")
-        if ava_bot_dir not in sys.path:
-            sys.path.insert(0, ava_bot_dir)
-            logger.info(f"📁 Agregado al PATH: {ava_bot_dir}")
-        
-        # Guardar directorio original y cambiar
+        # Cambiar directorio de trabajo
         original_cwd = os.getcwd()
-        os.chdir(ava_bot_dir)
-        logger.info(f"📂 Cambiado a directorio: {ava_bot_dir}")
+        os.chdir(str(AVA_BOT_DIR))
+        logger.info(f"Directorio cambiado a: {AVA_BOT_DIR}")
         
         try:
-            # Verificar que existe el archivo principal
-            ava_path = BASE_DIR / "ava_bot" / "ava_graph_bot.py"
-            if not ava_path.exists():
-                raise FileNotFoundError(f"Archivo ava_graph_bot.py no encontrado en: {ava_path}")
+            # Limpiar módulos previos para evitar conflictos
+            modules_to_remove = [name for name in sys.modules.keys() if 'ava_graph_bot' in name]
+            for module_name in modules_to_remove:
+                del sys.modules[module_name]
+                logger.info(f"Módulo limpiado: {module_name}")
             
-            logger.info(f"📄 Cargando módulo desde: {ava_path}")
+            # MÉTODO 1: Importación directa
+            try:
+                logger.info("Intentando importación directa...")
+                import ava_graph_bot
+                ava_module = ava_graph_bot
+                logger.info("✅ Importación directa exitosa")
+                
+            except ImportError as e:
+                logger.warning(f"Importación directa falló: {e}")
+                
+                # MÉTODO 2: Importación con importlib
+                logger.info("Intentando importación con importlib...")
+                spec = importlib.util.spec_from_file_location("ava_graph_bot", ava_file)
+                if not spec or not spec.loader:
+                    logger.error("No se pudo crear especificación del módulo")
+                    return None, None
+                
+                ava_module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(ava_module)
+                sys.modules['ava_graph_bot'] = ava_module
+                logger.info("✅ Importación con importlib exitosa")
             
-            # Importar dinámicamente el módulo AVA
-            spec = importlib.util.spec_from_file_location("ava_graph_bot", ava_path)
-            if spec is None:
-                raise ImportError("No se pudo crear spec para ava_graph_bot")
-            
-            ava_module = importlib.util.module_from_spec(spec)
-            if spec.loader is None:
-                raise ImportError("No se pudo obtener loader para ava_graph_bot")
-            
-            spec.loader.exec_module(ava_module)
-            logger.info("✅ Módulo AVA cargado exitosamente")
-            
-            # Verificar que la clase existe
-            if not hasattr(ava_module, 'AvaGraphBot'):
-                raise AttributeError("Clase AvaGraphBot no encontrada en el módulo")
-            
-            # Crear instancia
-            ava_instance = ava_module.AvaGraphBot()
-            logger.info("🤖 Instancia AvaGraphBot creada")
-            
-            # Verificar que tiene el método chat
-            if not hasattr(ava_instance, 'chat'):
-                raise AttributeError("La instancia AVA no tiene método 'chat'")
-            
-            logger.info("✅ Instancia AVA completamente funcional")
-            return ava_instance
-            
-        except Exception as e:
-            logger.error(f"❌ Error durante importación/creación: {str(e)}")
-            raise
+            # Verificar clase AvaGraphBot
+            if hasattr(ava_module, 'AvaGraphBot'):
+                AvaGraphBot = getattr(ava_module, 'AvaGraphBot')
+                logger.info("✅ Clase AvaGraphBot encontrada")
+                
+                # Verificar que es una clase
+                if isinstance(AvaGraphBot, type):
+                    logger.info("✅ AvaGraphBot es una clase válida")
+                    return ava_module, AvaGraphBot
+                else:
+                    logger.error("❌ AvaGraphBot no es una clase")
+                    return ava_module, None
+            else:
+                available_attrs = [attr for attr in dir(ava_module) if not attr.startswith('_')]
+                logger.error(f"❌ Clase AvaGraphBot no encontrada. Atributos disponibles: {available_attrs}")
+                return ava_module, None
+                
         finally:
             # Restaurar directorio original
             os.chdir(original_cwd)
-            logger.debug(f"📂 Restaurado directorio original: {original_cwd}")
-            
+            logger.info(f"Directorio restaurado a: {original_cwd}")
+        
     except Exception as e:
-        logger.error(f"❌ ERROR CRÍTICO CREANDO AVA: {str(e)}")
-        logger.error(f"❌ Traceback completo:\n{traceback.format_exc()}")
+        logger.error(f"Error crítico importando AvaGraphBot: {e}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        return None, None
+
+def create_ava_instance(session_id: str = None):
+    """Crear instancia de AvaGraphBot con manejo de errores"""
+    global AVA_CLASS
+    
+    if not AVA_CLASS:
+        logger.error("Clase AvaGraphBot no disponible")
+        return None
+    
+    try:
+        logger.info(f"Creando instancia AvaGraphBot para sesión: {session_id}")
+        
+        # Cambiar al directorio AVA para la creación
+        original_cwd = os.getcwd()
+        os.chdir(str(AVA_BOT_DIR))
+        
+        try:
+            # Crear instancia con debug_mode=False para webhook
+            ava_instance = AVA_CLASS(debug_mode=False)
+            logger.info("✅ Instancia AvaGraphBot creada exitosamente")
+            
+            # Verificar que tiene método chat
+            if hasattr(ava_instance, 'chat') and callable(getattr(ava_instance, 'chat')):
+                logger.info("✅ Método chat disponible")
+                return ava_instance
+            else:
+                logger.error("❌ Método chat no encontrado o no es callable")
+                return None
+                
+        finally:
+            os.chdir(original_cwd)
+        
+    except Exception as e:
+        logger.error(f"Error creando instancia AvaGraphBot: {e}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
         return None
 
-def process_llm_response(result: Any, user_message: str = "") -> Dict[str, Any]:
-    """Procesar respuesta del LLM de manera más robusta"""
+def get_or_create_ava_instance(session_id: str):
+    """Obtener o crear instancia persistente de AvaGraphBot"""
+    
+    # Reutilizar instancia existente (MEMORIA PERSISTENTE)
+    if session_id in ava_instances:
+        logger.info(f"♻️ Reutilizando instancia AvaGraphBot para sesión: {session_id}")
+        
+        # Verificar que la instancia sigue siendo válida
+        instance = ava_instances[session_id]
+        try:
+            # Test rápido de la instancia
+            status = instance.get_status()
+            if status.get('bot_ready', False):
+                return instance
+            else:
+                logger.warning("Instancia existente no está lista, creando nueva...")
+                del ava_instances[session_id]
+        except Exception as e:
+            logger.warning(f"Instancia existente tiene problemas: {e}, creando nueva...")
+            del ava_instances[session_id]
+    
+    # Crear nueva instancia
+    logger.info(f"🆕 Creando nueva instancia AvaGraphBot para sesión: {session_id}")
+    ava_instance = create_ava_instance(session_id)
+    
+    if ava_instance:
+        ava_instances[session_id] = ava_instance
+        logger.info(f"✅ Instancia AvaGraphBot almacenada para sesión: {session_id}")
+        logger.info(f"📊 Total sesiones activas: {len(ava_instances)}")
+        return ava_instance
+    else:
+        logger.error(f"❌ No se pudo crear instancia AvaGraphBot para sesión: {session_id}")
+        return None
+
+def process_ava_response(result: Dict[str, Any], user_message: str = "") -> Dict[str, Any]:
+    """Procesar respuesta específica de AvaGraphBot"""
     try:
-        logger.info(f"🔄 Procesando respuesta LLM (tipo: {type(result).__name__})")
+        logger.info(f"🔄 Procesando respuesta AvaGraphBot: {result}")
         
-        response_data = {
-            'success': True,
-            'response': '',
-            'metadata': {
-                'processing_timestamp': datetime.now().isoformat(),
-                'input_type': type(result).__name__,
-                'user_message_length': len(user_message)
-            },
-            'debug_info': {
-                'raw_type': str(type(result)),
-                'has_content': bool(result)
-            }
-        }
-        
-        # Caso 1: Respuesta es un diccionario
+        # AvaGraphBot retorna estructura específica
         if isinstance(result, dict):
-            logger.info("📊 Procesando respuesta tipo diccionario")
             
-            # Buscar texto de respuesta en diferentes campos posibles
-            response_fields = ['message', 'response', 'content', 'text', 'answer', 'output']
-            response_text = None
+            # Si hay error
+            if result.get('error', False):
+                error_msg = result.get('error_message', 'Error desconocido en AvaGraphBot')
+                logger.error(f"❌ Error en AvaGraphBot: {error_msg}")
+                return {
+                    'success': False,
+                    'response': f'Error procesando mensaje: {error_msg}',
+                    'metadata': {
+                        'error': True,
+                        'error_message': error_msg,
+                        'processing_timestamp': datetime.now().isoformat()
+                    }
+                }
             
-            for field in response_fields:
-                if field in result and result[field]:
-                    response_text = str(result[field])
-                    logger.info(f"📝 Texto encontrado en campo: {field}")
-                    break
-            
-            if not response_text:
-                # Si no hay campos específicos, convertir todo el dict
-                response_text = json.dumps(result, ensure_ascii=False, indent=2)
-                logger.warning("⚠️ No se encontró campo de texto específico, usando JSON completo")
-            
-            response_data['response'] = response_text
-            response_data['metadata'].update({
-                'source_field': next((field for field in response_fields if field in result), 'full_dict'),
-                'dict_keys': list(result.keys()),
-                'has_image': any(key in result for key in ['image', 'image_url', 'imageUrl']),
-                'has_metadata': 'metadata' in result
-            })
-            
-            # Extraer metadatos adicionales si existen
-            for meta_field in ['confidence', 'model_used', 'tokens_used', 'processing_time']:
-                if meta_field in result:
-                    response_data['metadata'][meta_field] = result[meta_field]
-                    
-        # Caso 2: Respuesta es una lista
-        elif isinstance(result, list):
-            logger.info(f"📋 Procesando respuesta tipo lista ({len(result)} elementos)")
-            
-            if result:
-                response_text = '\n'.join(str(item) for item in result if item)
-                response_data['response'] = response_text
-                response_data['metadata']['list_length'] = len(result)
-                response_data['metadata']['non_empty_items'] = len([item for item in result if item])
+            # Respuesta exitosa
+            message = result.get('message', '')
+            if message and message.strip():
+                logger.info(f"✅ Mensaje AvaGraphBot procesado: {len(message)} caracteres")
+                return {
+                    'success': True,
+                    'response': message.strip(),
+                    'metadata': {
+                        'session_id': result.get('session_id', ''),
+                        'user_id': result.get('user_id', ''),
+                        'processing_timestamp': datetime.now().isoformat(),
+                        'source': 'AvaGraphBot'
+                    }
+                }
             else:
-                response_data['response'] = "El modelo devolvió una lista vacía"
-                response_data['success'] = False
-                
-        # Caso 3: Respuesta es string
-        elif isinstance(result, str):
-            logger.info("📝 Procesando respuesta tipo string")
-            
-            if result.strip():
-                response_data['response'] = result.strip()
-                response_data['metadata']['text_length'] = len(result)
-                response_data['metadata']['word_count'] = len(result.split())
-            else:
-                response_data['response'] = "El modelo devolvió una cadena vacía"
-                response_data['success'] = False
-                
-        # Caso 4: Respuesta booleana o numérica
-        elif isinstance(result, (bool, int, float)):
-            logger.info(f"🔢 Procesando respuesta tipo {type(result).__name__}")
-            response_data['response'] = str(result)
-            response_data['metadata']['numeric_value'] = result
-            
-        # Caso 5: Respuesta None
-        elif result is None:
-            logger.warning("⚠️ Respuesta es None")
-            response_data['response'] = "El modelo no generó respuesta"
-            response_data['success'] = False
-            
-        # Caso 6: Otros tipos
+                logger.warning("⚠️ Respuesta AvaGraphBot vacía")
+                return {
+                    'success': False,
+                    'response': 'AvaGraphBot no generó respuesta válida',
+                    'metadata': {
+                        'empty_response': True,
+                        'raw_result': result,
+                        'processing_timestamp': datetime.now().isoformat()
+                    }
+                }
         else:
-            logger.warning(f"❓ Tipo de respuesta desconocido: {type(result)}")
-            response_data['response'] = str(result)
-            response_data['metadata']['converted_from'] = type(result).__name__
-            response_data['debug_info']['raw_preview'] = str(result)[:200]
-        
-        # Validaciones finales
-        if not response_data['response']:
-            response_data['response'] = "El modelo no generó una respuesta válida"
-            response_data['success'] = False
-            logger.warning("⚠️ Respuesta final vacía")
-        else:
-            logger.info(f"✅ Respuesta procesada exitosamente: {len(response_data['response'])} caracteres")
-        
-        return response_data
+            # Resultado no es diccionario (inesperado)
+            logger.warning(f"⚠️ Resultado inesperado de AvaGraphBot: {type(result)}")
+            return {
+                'success': False,
+                'response': f'Formato de respuesta inesperado: {str(result)}',
+                'metadata': {
+                    'unexpected_format': True,
+                    'result_type': str(type(result)),
+                    'processing_timestamp': datetime.now().isoformat()
+                }
+            }
         
     except Exception as e:
-        logger.error(f"❌ Error procesando respuesta LLM: {str(e)}")
-        logger.error(f"❌ Traceback: {traceback.format_exc()}")
-        
+        logger.error(f"❌ Error procesando respuesta AvaGraphBot: {e}")
         return {
             'success': False,
-            'response': f'Error interno procesando respuesta del modelo: {str(e)}',
+            'response': f'Error interno procesando respuesta: {str(e)}',
             'metadata': {
-                'error': str(e),
-                'error_type': type(e).__name__,
+                'processing_error': str(e),
                 'processing_timestamp': datetime.now().isoformat()
-            },
-            'debug_info': {
-                'raw_result_preview': str(result)[:500] if result else 'None',
-                'raw_result_type': str(type(result))
             }
         }
 
-def has_generated_new_image(timestamp_before: float) -> Optional[str]:
-    """Detectar si se generó una nueva imagen después del timestamp dado - MEJORADO"""
-    try:
-        if not GENERATED_IMAGES_DIR.exists():
-            logger.debug("📁 Directorio de imágenes generadas no existe")
-            return None
-        
-        current_time = datetime.now().timestamp()
-        
-        # Buscar imágenes generadas después del timestamp
-        for image_file in GENERATED_IMAGES_DIR.glob("*.png"):
-            file_time = image_file.stat().st_mtime
-            
-            # Solo imágenes generadas después de la llamada y en los últimos 30 segundos
-            if file_time > timestamp_before and (current_time - file_time) < 30:
-                image_url = f"http://localhost:5001/images/{image_file.name}"
-                logger.info(f"🖼️ Nueva imagen detectada: {image_url}")
-                return image_url
-        
-        # También buscar en otros formatos
-        for ext in ['jpg', 'jpeg', 'gif', 'webp']:
-            for image_file in GENERATED_IMAGES_DIR.glob(f"*.{ext}"):
-                file_time = image_file.stat().st_mtime
-                if file_time > timestamp_before and (current_time - file_time) < 30:
-                    image_url = f"http://localhost:5001/images/{image_file.name}"
-                    logger.info(f"🖼️ Nueva imagen detectada ({ext}): {image_url}")
-                    return image_url
-        
-        return None
-        
-    except Exception as e:
-        logger.error(f"❌ Error detectando nueva imagen: {str(e)}")
-        return None
-
-def allowed_file(filename):
-    """Verificar si el archivo tiene una extensión permitida"""
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-def validate_image_file(file_data: bytes, filename: str) -> Dict[str, Any]:
-    """Validar archivo de imagen y obtener información"""
-    try:
-        # Verificar que es una imagen válida
-        image = Image.open(io.BytesIO(file_data))
-        
-        return {
-            'valid': True,
-            'format': image.format,
-            'size': image.size,
-            'mode': image.mode,
-            'file_size': len(file_data),
-            'filename': filename
-        }
-    except Exception as e:
-        logger.error(f"❌ Error validando imagen {filename}: {str(e)}")
-        return {
-            'valid': False,
-            'error': str(e),
-            'filename': filename
-        }
-
-def process_base64_image(base64_data: str, filename: str) -> Optional[str]:
-    """Procesar imagen en base64 y guardarla"""
-    try:
-        # Extraer datos de la imagen base64
-        if ',' in base64_data:
-            header, data = base64_data.split(',', 1)
-        else:
-            data = base64_data
-        
-        # Decodificar base64
-        image_data = base64.b64decode(data)
-        
-        # Validar imagen
-        validation = validate_image_file(image_data, filename)
-        if not validation['valid']:
-            logger.error(f"❌ Imagen base64 inválida: {validation['error']}")
-            return None
-        
-        # Generar nombre único
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        file_extension = validation.get('format', 'png').lower()
-        unique_filename = f"user_image_{timestamp}_{uuid.uuid4().hex[:8]}.{file_extension}"
-        
-        # Guardar en directorio de usuario
-        file_path = USER_IMAGES_DIR / unique_filename
-        with open(file_path, 'wb') as f:
-            f.write(image_data)
-        
-        logger.info(f"💾 Imagen base64 guardada: {unique_filename}")
-        logger.info(f"📏 Tamaño: {validation['size']}, Formato: {validation['format']}")
-        
-        return f"http://localhost:5001/user-images/{unique_filename}"
-        
-    except Exception as e:
-        logger.error(f"❌ Error procesando imagen base64: {str(e)}")
-        return None
-
-def log_conversation(session_id: str, user_message: str, ai_response: str, 
-                    file_info: Optional[Dict] = None, image_info: Optional[Dict] = None):
-    """Guardar conversación en logs con información de archivos e imágenes"""
-    try:
-        log_entry = {
-            "timestamp": datetime.now().isoformat(),
-            "session_id": session_id,
-            "user_message": user_message,
-            "ai_response": ai_response[:1000] + "..." if len(ai_response) > 1000 else ai_response,  # Limitar tamaño
-            "file_info": file_info,
-            "image_info": image_info,
-            "metadata": {
-                "message_length": len(user_message),
-                "response_length": len(ai_response),
-                "has_file": file_info is not None,
-                "has_image": image_info is not None
-            }
-        }
-        
-        log_file = CHAT_LOGS_DIR / f"chat_{datetime.now().strftime('%Y%m%d')}.json"
-        
-        logs = []
-        if log_file.exists():
-            try:
-                with open(log_file, 'r', encoding='utf-8') as f:
-                    logs = json.load(f)
-            except:
-                logs = []
-        
-        logs.append(log_entry)
-        
-        # Mantener solo los últimos 1000 logs por día
-        if len(logs) > 1000:
-            logs = logs[-1000:]
-        
-        with open(log_file, 'w', encoding='utf-8') as f:
-            json.dump(logs, f, ensure_ascii=False, indent=2)
-            
-        logger.debug(f"📝 Conversación guardada en log: {log_file}")
-            
-    except Exception as e:
-        logger.error(f"❌ Error guardando log: {e}")
-
+# 🔧 MODIFICAR el endpoint handle_chat para incluir imágenes de usuario
 @app.route('/api/chat', methods=['POST', 'OPTIONS'])
-@cross_origin()
 def handle_chat():
-    """Endpoint principal para chat con AgenteAVA - MEJORADO"""
+    """Endpoint principal de chat con AvaGraphBot"""
     if request.method == 'OPTIONS':
         return '', 200
     
-    request_start_time = datetime.now()
-    logger.info(f"\n💬 === NUEVA SOLICITUD CHAT === {request_start_time.strftime('%H:%M:%S')} ===")
-    
     try:
-        logger.info(f"Content-Type: {request.content_type}")
+        logger.info("=" * 70)
+        logger.info("🚀 NUEVA SOLICITUD DE CHAT (AVAGRAPHBOT)")
+        request_start_time = datetime.now()
         
-        # Manejar FormData (archivos)
-        if request.content_type and 'multipart/form-data' in request.content_type:
-            return handle_file_chat()
+        # Verificar disponibilidad de AvaGraphBot
+        if not AVA_CLASS:
+            logger.error("❌ Clase AvaGraphBot no disponible")
+            return jsonify({
+                'success': False,
+                'response': 'El servicio de inteligencia artificial no está disponible. AvaGraphBot no se pudo cargar.',
+                'error_code': 'AVAGRAPHBOT_CLASS_UNAVAILABLE'
+            }), 503
         
-        # Validar Content-Type para JSON
-        if request.content_type != 'application/json':
-            logger.warning(f"❌ Content-Type inválido: {request.content_type}")
+        # Verificar JSON
+        if not request.is_json:
+            logger.error(f"❌ Content-Type inválido: {request.content_type}")
             return jsonify({
                 'success': False,
                 'response': 'Content-Type debe ser application/json'
             }), 400
         
-        # Obtener y validar datos JSON
+        # Obtener datos
         try:
             data = request.get_json()
+            logger.info(f"📊 Datos recibidos: {json.dumps({k: v if k != 'fileData' else '[BASE64_DATA]' for k, v in data.items()}, indent=2)}")
         except Exception as json_error:
-            logger.error(f"❌ Error parseando JSON: {str(json_error)}")
+            logger.error(f"❌ Error parseando JSON: {json_error}")
             return jsonify({
                 'success': False,
                 'response': 'JSON inválido en la solicitud'
             }), 400
         
         if not data:
-            logger.warning("❌ Datos JSON vacíos")
             return jsonify({
                 'success': False,
                 'response': 'Datos JSON requeridos'
@@ -440,661 +324,599 @@ def handle_chat():
         
         # Extraer parámetros
         user_message = data.get('message', '').strip()
-        session_id = data.get('session_id', data.get('sessionId', f'session_{uuid.uuid4().hex}'))
-        conversation_id = data.get('conversationId', session_id)
-        has_file = data.get('hasFile', False)
-        file_data = data.get('fileData', '')
-        file_name = data.get('fileName', '')
+        session_id = data.get('session_id', data.get('sessionId', data.get('conversationId', f'session_{uuid.uuid4().hex}')))
         
-        # Logging de parámetros
-        logger.info(f"📝 Mensaje: '{user_message[:100]}{'...' if len(user_message) > 100 else ''}'")
+        # 🆕 PROCESAR ARCHIVO ADJUNTO
+        user_image_url = None
+        image_path_for_ava = None
+        
+        # Procesar imagen desde base64 (método original)
+        if data.get('fileData') and data.get('fileName'):
+            try:
+                logger.info(f"🖼️ Procesando imagen adjunta desde base64: {data.get('fileName')}")
+                user_image_url = process_user_image(data.get('fileData'), data.get('fileName'))
+                if user_image_url:
+                    logger.info(f"✅ Imagen de usuario guardada: {user_image_url}")
+                    # Añadir contexto de imagen al mensaje
+                    user_message += f"\n[Imagen adjunta: {data.get('fileName')}]"
+            except Exception as img_error:
+                logger.error(f"❌ Error procesando imagen desde base64: {img_error}")
+        
+        # Procesar imagen desde ruta de archivo (método desde route.ts)
+        elif data.get('imagePath') and data.get('fileName'):
+            try:
+                original_filename = data.get('fileName')
+                unique_file_path = data.get('imagePath')
+                
+                logger.info(f"🖼️ Procesando imagen desde ruta única: {unique_file_path}")
+                
+                # Verificar que el archivo único existe
+                if os.path.exists(unique_file_path):
+                    logger.info(f"✅ Archivo único encontrado: {unique_file_path}")
+                    
+                    # Crear copia con nombre original para que el agente la encuentre
+                    original_file_path = os.path.join(AVA_SHARED_DIR, original_filename)
+                    
+                    # Solo copiar si no existe o es diferente
+                    if not os.path.exists(original_file_path) or os.path.getmtime(unique_file_path) > os.path.getmtime(original_file_path):
+                        import shutil
+                        shutil.copy2(unique_file_path, original_file_path)
+                        logger.info(f"📋 Archivo copiado para agente: {original_file_path}")
+                    
+                    image_path_for_ava = original_file_path
+                    # Añadir contexto de imagen al mensaje
+                    user_message += f"\n[Imagen adjunta: {original_filename}]"
+                else:
+                    logger.error(f"❌ Archivo único no encontrado: {unique_file_path}")
+                    image_path_for_ava = None
+            except Exception as img_error:
+                logger.error(f"❌ Error procesando imagen desde ruta: {img_error}")
+                image_path_for_ava = None
+        
+        logger.info(f"💬 Mensaje: '{user_message[:100]}{'...' if len(user_message) > 100 else ''}'")
         logger.info(f"🔑 Session ID: {session_id}")
-        logger.info(f"💬 Conversation ID: {conversation_id}")
-        logger.info(f"📎 Tiene archivo: {has_file}")
-        if has_file:
-            logger.info(f"📄 Archivo: {file_name}")
         
-        # Validar que hay mensaje
         if not user_message:
-            logger.warning("❌ Mensaje vacío")
             return jsonify({
                 'success': False,
                 'response': 'El mensaje no puede estar vacío'
             }), 400
         
-        # Marcar tiempo antes de crear AVA
-        ava_creation_start = datetime.now().timestamp()
+        # Marcar tiempo antes de procesar con AVA
+        process_start_time = datetime.now().timestamp()
         
-        # Procesar imagen base64 si existe
-        user_image_url = None
-        image_info = None
-        if has_file and file_data and file_name:
-            logger.info("🖼️ Procesando imagen base64...")
-            user_image_url = process_base64_image(file_data, file_name)
-            if user_image_url:
-                image_info = {
-                    "uploaded_image_url": user_image_url,
-                    "original_filename": file_name,
-                    "processed_at": datetime.now().isoformat()
-                }
-                logger.info(f"✅ Imagen procesada: {user_image_url}")
-            else:
-                logger.warning("⚠️ No se pudo procesar la imagen base64")
-        
-        # Crear instancia fresca de AVA
-        logger.info("🤖 Creando instancia AVA...")
-        ava_instance = create_fresh_ava_instance()
+        # Obtener instancia persistente de AvaGraphBot
+        logger.info("🧠 Obteniendo instancia persistente de AvaGraphBot...")
+        ava_instance = get_or_create_ava_instance(session_id)
         
         if not ava_instance:
-            logger.error("❌ No se pudo crear instancia AVA")
+            logger.error("❌ No se pudo obtener instancia AvaGraphBot")
             return jsonify({
                 'success': False,
-                'response': 'El servicio de inteligencia artificial no está disponible temporalmente. Por favor, intenta nuevamente en unos momentos.',
-                'error_code': 'AVA_INSTANCE_FAILED'
+                'response': 'No se pudo crear la instancia de inteligencia artificial. El sistema puede estar sobrecargado.',
+                'error_code': 'AVAGRAPHBOT_INSTANCE_FAILED'
             }), 503
         
-        ava_creation_time = datetime.now().timestamp() - ava_creation_start
-        logger.info(f"✅ Instancia AVA creada en {ava_creation_time:.2f} segundos")
+        # Procesar mensaje con AvaGraphBot
+        logger.info("🤖 Procesando mensaje con AvaGraphBot...")
         
-        # Preparar mensaje para AVA (incluir información de imagen si existe)
+        # Preparar mensaje para AvaGraphBot incluyendo ruta de imagen si existe
         message_for_ava = user_message
-        if user_image_url:
-            # Guardar también en shared_files para que AVA pueda acceder
-            try:
-                # Copiar imagen a shared_files
-                user_image_path = USER_IMAGES_DIR / user_image_url.split('/')[-1]
-                shared_image_path = AVA_SHARED_DIR / user_image_url.split('/')[-1]
-                
-                if user_image_path.exists():
-                    import shutil
-                    shutil.copy2(user_image_path, shared_image_path)
-                    message_for_ava = f'Analiza esta imagen: "{shared_image_path}" - {user_message}'
-                    logger.info(f"📋 Mensaje para AVA con imagen: {message_for_ava[:100]}...")
-            except Exception as copy_error:
-                logger.error(f"❌ Error copiando imagen a shared_files: {copy_error}")
-        
-        # Procesar mensaje con AVA
-        logger.info("🧠 Enviando mensaje a AVA para procesamiento...")
-        llm_start_time = datetime.now().timestamp()
+        if image_path_for_ava:
+            # Usar el nombre original del archivo que el LLM espera
+            original_filename = data.get('fileName', 'imagen.png')
+            
+            message_for_ava = message_for_ava.replace(f"[Imagen adjunta: {original_filename}]", 
+                                                    f"[Imagen adjunta: {original_filename}]")
+            
+            # Agregar instrucciones simples usando solo el nombre original
+            message_for_ava += f"\n\n🔍 ANÁLISIS DE IMAGEN REQUERIDO:"
+            message_for_ava += f"\n- Archivo disponible: {original_filename}"
+            message_for_ava += f"\n- Usar herramienta: vision"
+            message_for_ava += f"\n- Parámetro: image_path = '{original_filename}'"
+            message_for_ava += f"\n- ⚠️ IMPORTANTE: Usar exactamente este nombre de archivo"
+            
+            logger.info(f"📎 Enviando instrucciones con nombre original: {original_filename}")
+            logger.info(f"📁 Archivo copiado en: {image_path_for_ava}")
         
         try:
             result = ava_instance.chat(message_for_ava)
-            llm_processing_time = datetime.now().timestamp() - llm_start_time
+            processing_time = datetime.now().timestamp() - process_start_time
             
-            logger.info(f"✅ AVA procesó el mensaje en {llm_processing_time:.2f} segundos")
-            logger.debug(f"🔍 Resultado crudo (primeros 200 chars): {str(result)[:200]}")
+            logger.info(f"✅ AvaGraphBot procesó en {processing_time:.2f} segundos")
+            logger.info(f"📤 Resultado crudo: {result}")
             
         except Exception as ava_error:
-            logger.error(f"❌ Error en procesamiento AVA: {str(ava_error)}")
-            logger.error(f"❌ Traceback AVA:\n{traceback.format_exc()}")
+            logger.error(f"❌ Error en AvaGraphBot: {ava_error}")
+            logger.error(f"Traceback: {traceback.format_exc()}")
             
             return jsonify({
                 'success': False,
-                'response': 'Error procesando tu mensaje con la inteligencia artificial. Por favor, intenta con una pregunta diferente.',
-                'error_code': 'AVA_PROCESSING_FAILED',
-                'error_details': str(ava_error) if app.debug else None
+                'response': 'Error procesando tu mensaje con AvaGraphBot. Por favor, intenta con una pregunta diferente.',
+                'error_code': 'AVAGRAPHBOT_PROCESSING_ERROR',
+                'error_details': str(ava_error)
             }), 500
         
-        # Procesar respuesta del LLM
-        logger.info("🔄 Procesando respuesta del LLM...")
-        processed_response = process_llm_response(result, user_message)
+        # Procesar respuesta
+        logger.info("🔄 Procesando respuesta de AvaGraphBot...")
+        processed_response = process_ava_response(result, user_message)
         
-        # Detectar si se generó nueva imagen
-        generated_image_url = has_generated_new_image(ava_creation_start)
+        # Detectar imagen generada por AvaGraphBot
+        generated_image_url = detect_new_generated_image(process_start_time)
         
         # Construir respuesta final
-        total_processing_time = datetime.now().timestamp() - request_start_time.timestamp()
+        total_time = datetime.now().timestamp() - request_start_time.timestamp()
         
         final_response = {
             'success': processed_response['success'],
-            'responseText': processed_response['response'],  # Para compatibilidad con frontend
-            'response': processed_response['response'],      # Formato estándar
+            'response': processed_response['response'],
+            'responseText': processed_response['response'],
             'session_id': session_id,
-            'conversationId': conversation_id,
+            'conversationId': session_id,
             'timestamp': datetime.now().isoformat(),
-            'agentName': 'AgenteAVA',
+            'agentName': 'AvaGraphBot',
             'metadata': {
                 **processed_response.get('metadata', {}),
-                'processing_times': {
-                    'total_seconds': round(total_processing_time, 3),
-                    'ava_creation_seconds': round(ava_creation_time, 3),
-                    'llm_processing_seconds': round(llm_processing_time, 3)
-                },
-                'request_info': {
-                    'had_file': has_file,
-                    'had_user_image': user_image_url is not None,
-                    'message_length': len(user_message),
-                    'timestamp': request_start_time.isoformat()
-                }
+                'processing_time_seconds': round(processing_time, 3),
+                'total_time_seconds': round(total_time, 3),
+                'memory_preserved': True,
+                'session_active': session_id in ava_instances,
+                'bot_type': 'AvaGraphBot',
+                'raw_ava_result': result
             }
         }
         
-        # Agregar URLs de imágenes
+        # 🆕 AGREGAR IMAGEN DE USUARIO A LA RESPUESTA
         if user_image_url:
-            final_response['uploadedImageUrl'] = user_image_url
+            final_response['userImageUrl'] = user_image_url
+            final_response['userImageAlt'] = f"Imagen subida: {data.get('fileName', 'imagen.png')}"
             final_response['metadata']['user_image_processed'] = True
-            logger.info(f"👤 Imagen de usuario incluida: {user_image_url}")
+            logger.info(f"🖼️ Imagen de usuario incluida en respuesta: {user_image_url}")
         
+        # Agregar URL de imagen generada por AvaGraphBot si existe
         if generated_image_url:
             final_response['imageUrl'] = generated_image_url
+            final_response['imageAlt'] = "Imagen generada por AvaGraphBot"
             final_response['metadata']['generated_image'] = True
-            logger.info(f"🖼️ Imagen generada por AVA incluida: {generated_image_url}")
+            logger.info(f"🎨 Imagen generada incluida: {generated_image_url}")
         
-        # Guardar en logs
-        log_conversation(
-            session_id, 
-            user_message, 
-            processed_response['response'],
-            image_info=image_info
-        )
-        
-        # Logging de respuesta exitosa
-        response_length = len(final_response['response'])
-        logger.info(f"📤 Respuesta lista: {response_length} caracteres")
-        logger.info(f"⏱️ Tiempo total de procesamiento: {total_processing_time:.3f} segundos")
-        logger.info(f"✅ === SOLICITUD COMPLETADA EXITOSAMENTE ===\n")
+        logger.info(f"✅ Respuesta exitosa: {len(final_response['response'])} caracteres")
+        logger.info(f"🧠 Memoria preservada para sesión: {session_id}")
+        logger.info(f"⏱️ Tiempo total: {total_time:.3f} segundos")
+        logger.info("=" * 70)
         
         return jsonify(final_response)
         
     except Exception as critical_error:
-        total_time = datetime.now().timestamp() - request_start_time.timestamp()
-        logger.error(f"❌ ERROR CRÍTICO EN WEBHOOK: {str(critical_error)}")
-        logger.error(f"❌ Tiempo hasta error: {total_time:.3f} segundos")
-        logger.error(f"❌ Traceback completo:\n{traceback.format_exc()}")
+        logger.error(f"❌ ERROR CRÍTICO: {critical_error}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
         
         return jsonify({
             'success': False,
-            'response': 'Ha ocurrido un error interno en el servidor. Nuestro equipo ha sido notificado.',
-            'error_code': 'CRITICAL_SERVER_ERROR',
-            'timestamp': datetime.now().isoformat(),
-            'error_details': str(critical_error) if app.debug else None
-        }), 500
-
-def handle_file_chat():
-    """Manejar chat con archivos usando AgenteAVA - MEJORADO"""
-    try:
-        logger.info(f"\n📁 === FILE CHAT === {datetime.now().strftime('%H:%M:%S')} ===")
-        
-        user_message = request.form.get('message', '').strip()
-        session_id = request.form.get('session_id', f'session_{uuid.uuid4().hex}')
-        uploaded_file = request.files.get('file')
-        
-        if not uploaded_file:
-            return jsonify({
-                'success': False, 
-                'response': 'Archivo requerido para esta solicitud'
-            }), 400
-        
-        # Validar archivo
-        if not allowed_file(uploaded_file.filename):
-            return jsonify({
-                'success': False,
-                'response': f'Tipo de archivo no permitido. Extensiones permitidas: {", ".join(ALLOWED_EXTENSIONS)}'
-            }), 400
-        
-        # Verificar tamaño
-        uploaded_file.seek(0, 2)  # Ir al final del archivo
-        file_size = uploaded_file.tell()
-        uploaded_file.seek(0)  # Volver al inicio
-        
-        if file_size > MAX_FILE_SIZE:
-            return jsonify({
-                'success': False,
-                'response': f'Archivo demasiado grande. Tamaño máximo: {MAX_FILE_SIZE // (1024*1024)}MB'
-            }), 400
-        
-        # Generar nombre único y seguro
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        original_filename = secure_filename(uploaded_file.filename)
-        file_extension = original_filename.split('.')[-1] if '.' in original_filename else 'bin'
-        unique_filename = f"upload_{timestamp}_{uuid.uuid4().hex[:8]}.{file_extension}"
-        
-        # Guardar en múltiples ubicaciones para compatibilidad
-        shared_file_path = AVA_SHARED_DIR / unique_filename
-        upload_file_path = CHAT_UPLOADS_DIR / unique_filename
-        
-        # Leer datos del archivo
-        file_data = uploaded_file.read()
-        
-        # Guardar archivo
-        with open(shared_file_path, 'wb') as f:
-            f.write(file_data)
-        with open(upload_file_path, 'wb') as f:
-            f.write(file_data)
-        
-        logger.info(f"📁 Archivo guardado: {unique_filename} ({file_size} bytes)")
-        
-        # Información del archivo
-        file_info = {
-            "filename": unique_filename,
-            "original_name": original_filename,
-            "file_type": file_extension,
-            "file_size": file_size,
-            "uploaded_at": datetime.now().isoformat(),
-            "is_image": file_extension.lower() in ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp']
-        }
-        
-        # Si es imagen, validar y procesar
-        uploaded_file_url = f"http://localhost:5001/uploads/{unique_filename}"
-        if file_info['is_image']:
-            validation = validate_image_file(file_data, original_filename)
-            if validation['valid']:
-                file_info['image_info'] = {
-                    'format': validation['format'],
-                    'size': validation['size'],
-                    'mode': validation['mode']
-                }
-                logger.info(f"🖼️ Imagen válida: {validation['size']}, formato: {validation['format']}")
-            else:
-                logger.warning(f"⚠️ Imagen inválida: {validation['error']}")
-        
-        # Marcar tiempo antes de AVA
-        time_before_ava = datetime.now().timestamp()
-        
-        # Preparar mensaje para AVA
-        if user_message:
-            message_for_ava = f'Analiza el archivo: "{shared_file_path}" - {user_message}'
-        else:
-            message_for_ava = f'Analiza el archivo: "{shared_file_path}"'
-        
-        logger.info(f"🤖 Enviando a AgenteAVA: {message_for_ava[:100]}...")
-        
-        # Crear instancia y procesar con AgenteAVA
-        ava_instance = create_fresh_ava_instance()
-        if not ava_instance:
-            return jsonify({
-                'success': False,
-                'response': 'AgenteAVA no está disponible para procesar archivos.',
-                'error_code': 'AVA_INSTANCE_FAILED'
-            }), 503
-        
-        # Procesar con AVA
-        try:
-            result = ava_instance.chat(message_for_ava)
-            logger.info("✅ AVA procesó el archivo exitosamente")
-        except Exception as ava_error:
-            logger.error(f"❌ Error procesando archivo con AVA: {str(ava_error)}")
-            return jsonify({
-                'success': False,
-                'response': 'Error procesando el archivo con la inteligencia artificial.',
-                'error_code': 'AVA_FILE_PROCESSING_FAILED'
-            }), 500
-        
-        # Procesar respuesta
-        processed_response = process_llm_response(result, user_message)
-        
-        # Verificar imagen generada por AVA
-        generated_image_url = has_generated_new_image(time_before_ava)
-        
-        # Preparar respuesta
-        response_data = {
-            'success': processed_response['success'],
-            'response': processed_response['response'],
-            'responseText': processed_response['response'],  # Compatibilidad
-            'session_id': session_id,
-            'uploadedImageUrl': uploaded_file_url,
-            'timestamp': datetime.now().isoformat(),
-            'agentName': 'AgenteAVA',
-            'metadata': {
-                **processed_response.get('metadata', {}),
-                'file_info': file_info,
-                'uploaded_file_url': uploaded_file_url
-            }
-        }
-        
-        if generated_image_url:
-            response_data['imageUrl'] = generated_image_url
-            response_data['metadata']['generated_image'] = True
-            logger.info(f"🖼️ Imagen generada por AVA: {generated_image_url}")
-        
-        # Guardar en logs
-        log_conversation(
-            session_id, 
-            user_message or "Archivo subido", 
-            processed_response['response'], 
-            file_info=file_info
-        )
-        
-        logger.info(f"✅ === ARCHIVO PROCESADO EXITOSAMENTE ===\n")
-        return jsonify(response_data)
-        
-    except Exception as e:
-        logger.error(f"❌ ERROR EN FILE CHAT: {e}")
-        logger.error(f"❌ Traceback: {traceback.format_exc()}")
-        return jsonify({
-            'success': False,
-            'response': 'Error procesando archivo. Por favor, intenta nuevamente.',
-            'error_code': 'FILE_PROCESSING_ERROR',
-            'error_details': str(e) if app.debug else None
-        }), 500
-
-# ✅ ENDPOINTS PARA SERVIR ARCHIVOS - MEJORADOS
-@app.route('/images/<filename>')
-@cross_origin()
-def serve_generated_image(filename):
-    """Servir imágenes generadas por AgenteAVA"""
-    try:
-        logger.debug(f"📤 Sirviendo imagen generada: {filename}")
-        return send_from_directory(GENERATED_IMAGES_DIR, filename)
-    except FileNotFoundError:
-        logger.warning(f"❌ Imagen generada no encontrada: {filename}")
-        return jsonify({"error": "Imagen no encontrada"}), 404
-    except Exception as e:
-        logger.error(f"❌ Error sirviendo imagen generada {filename}: {e}")
-        return jsonify({"error": "Error interno del servidor"}), 500
-
-@app.route('/uploads/<filename>')
-@cross_origin()
-def serve_uploaded_file(filename):
-    """Servir archivos subidos por usuarios"""
-    try:
-        logger.debug(f"📤 Sirviendo archivo subido: {filename}")
-        return send_from_directory(CHAT_UPLOADS_DIR, filename)
-    except FileNotFoundError:
-        logger.warning(f"❌ Archivo subido no encontrado: {filename}")
-        return jsonify({"error": "Archivo no encontrado"}), 404
-    except Exception as e:
-        logger.error(f"❌ Error sirviendo archivo subido {filename}: {e}")
-        return jsonify({"error": "Error interno del servidor"}), 500
-
-@app.route('/user-images/<filename>')
-@cross_origin()
-def serve_user_image(filename):
-    """Servir imágenes de usuario procesadas desde base64"""
-    try:
-        logger.debug(f"📤 Sirviendo imagen de usuario: {filename}")
-        return send_from_directory(USER_IMAGES_DIR, filename)
-    except FileNotFoundError:
-        logger.warning(f"❌ Imagen de usuario no encontrada: {filename}")
-        return jsonify({"error": "Imagen no encontrada"}), 404
-    except Exception as e:
-        logger.error(f"❌ Error sirviendo imagen de usuario {filename}: {e}")
-        return jsonify({"error": "Error interno del servidor"}), 500
-
-# ✅ ENDPOINTS DE DIAGNÓSTICO Y ESTADO - MEJORADOS
-@app.route('/api/chat/status', methods=['GET'])
-@cross_origin()
-def llm_status():
-    """Verificar estado y salud del LLM"""
-    try:
-        logger.info("🔍 Iniciando verificación de estado LLM...")
-        status_start_time = datetime.now().timestamp()
-        
-        # Intentar crear instancia
-        ava_instance = create_fresh_ava_instance()
-        
-        if not ava_instance:
-            return jsonify({
-                'status': 'unhealthy',
-                'llm_available': False,
-                'error': 'No se pudo crear instancia AVA',
-                'timestamp': datetime.now().isoformat(),
-                'check_duration_seconds': datetime.now().timestamp() - status_start_time
-            }), 503
-        
-        # Probar con mensaje simple
-        test_message = "Hola, confirma que estás funcionando correctamente."
-        logger.info(f"🧪 Probando LLM con mensaje: '{test_message}'")
-        
-        try:
-            test_result = ava_instance.chat(test_message)
-            processed = process_llm_response(test_result, test_message)
-            
-            check_duration = datetime.now().timestamp() - status_start_time
-            
-            logger.info(f"✅ Verificación LLM completada en {check_duration:.3f} segundos")
-            
-            return jsonify({
-                'status': 'healthy',
-                'llm_available': True,
-                'test_successful': processed['success'],
-                'test_response_length': len(processed['response']),
-                'test_response_preview': processed['response'][:100],
-                'check_duration_seconds': round(check_duration, 3),
-                'timestamp': datetime.now().isoformat(),
-                'service': 'AVA Chat Webhook Enhanced',
-                'version': '2.0'
-            })
-            
-        except Exception as test_error:
-            logger.error(f"❌ Error en prueba LLM: {str(test_error)}")
-            return jsonify({
-                'status': 'partial',
-                'llm_available': True,
-                'test_successful': False,
-                'error': f'AVA creado pero falló en prueba: {str(test_error)}',
-                'timestamp': datetime.now().isoformat()
-            }), 503
-            
-    except Exception as e:
-        logger.error(f"❌ Error crítico verificando LLM: {str(e)}")
-        return jsonify({
-            'status': 'error',
-            'llm_available': False,
-            'error': str(e),
+            'response': 'Error interno del servidor.',
+            'error_code': 'CRITICAL_ERROR',
             'timestamp': datetime.now().isoformat()
         }), 500
 
-@app.route('/health')
-@cross_origin()
-def health():
-    """Estado completo del servicio de chat"""
+# 🆕 FUNCIÓN PARA PROCESAR IMÁGENES DE USUARIO
+def process_user_image(file_data: str, filename: str) -> Optional[str]:
+    """Procesar imagen enviada por el usuario"""
     try:
-        # Verificar AVA
-        ava_available = False
-        ava_error = None
+        # Decodificar base64
+        if file_data.startswith('data:'):
+            file_data = file_data.split(',')[1]
+        
+        image_bytes = base64.b64decode(file_data)
+        
+        # Generar nombre único
+        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        safe_filename = secure_filename(filename)
+        unique_filename = f"user_{timestamp}_{uuid.uuid4().hex[:8]}_{safe_filename}"
+        
+        # Guardar en directorio de imágenes de usuario
+        image_path = USER_IMAGES_DIR / unique_filename
+        
+        # Verificar que es una imagen válida
         try:
-            test_ava = create_fresh_ava_instance()
-            ava_available = test_ava is not None
-        except Exception as e:
-            ava_error = str(e)
+            image = Image.open(io.BytesIO(image_bytes))
+            image.verify()  # Verificar integridad
+            
+            # Reabrir para guardar (después de verify() no se puede usar)
+            image = Image.open(io.BytesIO(image_bytes))
+            
+            # Convertir a RGB si es necesario
+            if image.mode in ('RGBA', 'LA'):
+                background = Image.new('RGB', image.size, (255, 255, 255))
+                background.paste(image, mask=image.split()[-1] if image.mode == 'RGBA' else None)
+                image = background
+            
+            # Guardar imagen
+            image.save(image_path, format='PNG', optimize=True)
+            
+            # Retornar URL accesible
+            image_url = f"http://localhost:5001/user-images/{unique_filename}"
+            logger.info(f"✅ Imagen de usuario guardada: {image_path}")
+            return image_url
+            
+        except Exception as img_error:
+            logger.error(f"❌ Error validando imagen: {img_error}")
+            return None
         
-        # Verificar directorios
-        directories_status = {
-            "ava_bot_exists": (BASE_DIR / "ava_bot").exists(),
-            "ava_graph_bot_exists": (BASE_DIR / "ava_bot" / "ava_graph_bot.py").exists(),
-            "shared_files_exists": AVA_SHARED_DIR.exists(),
-            "generated_images_exists": GENERATED_IMAGES_DIR.exists(),
-            "user_images_exists": USER_IMAGES_DIR.exists(),
-            "chat_uploads_exists": CHAT_UPLOADS_DIR.exists(),
-            "chat_logs_exists": CHAT_LOGS_DIR.exists()
-        }
+    except Exception as e:
+        logger.error(f"❌ Error procesando imagen de usuario: {e}")
+        return None
+
+# 🔧 MODIFICAR LA FUNCIÓN detect_new_generated_image para ser más específica
+def detect_new_generated_image(timestamp_before: float) -> Optional[str]:
+    """Detectar imagen generada por AvaGraphBot después del timestamp"""
+    try:
+        if not GENERATED_IMAGES_DIR.exists():
+            logger.info("📁 Directorio de imágenes generadas no existe")
+            return None
         
-        # Contar archivos en directorios
-        file_counts = {}
-        for dir_name, dir_path in [
-            ("generated_images", GENERATED_IMAGES_DIR),
-            ("user_images", USER_IMAGES_DIR),
-            ("chat_uploads", CHAT_UPLOADS_DIR),
-            ("shared_files", AVA_SHARED_DIR)
-        ]:
+        current_time = datetime.now().timestamp()
+        latest_image = None
+        latest_time = timestamp_before
+        
+        # Buscar la imagen más reciente después del timestamp
+        for image_file in GENERATED_IMAGES_DIR.glob("*.png"):
+            if image_file.is_file():
+                file_time = image_file.stat().st_mtime
+                
+                # Solo imágenes generadas después del timestamp y en ventana de 120 segundos
+                if file_time > timestamp_before and (current_time - file_time) < 120:
+                    if file_time > latest_time:
+                        latest_time = file_time
+                        latest_image = image_file
+        
+        if latest_image:
+            image_url = f"http://localhost:5001/images/{latest_image.name}"
+            logger.info(f"🖼️ Nueva imagen AvaGraphBot detectada: {image_url}")
+            return image_url
+        else:
+            logger.info("🔍 No se detectaron nuevas imágenes generadas por AvaGraphBot")
+            return None
+        
+    except Exception as e:
+        logger.error(f"❌ Error detectando imagen generada: {e}")
+        return None
+
+# IMPORTAR AVAGRAPHBOT AL INICIAR
+logger.info("=" * 60)
+logger.info("🚀 IMPORTANDO AVAGRAPHBOT...")
+logger.info("=" * 60)
+
+AVA_MODULE, AVA_CLASS = import_ava_graph_bot()
+
+if AVA_MODULE and AVA_CLASS:
+    logger.info(f"✅ AvaGraphBot listo: {AVA_CLASS.__name__}")
+else:
+    logger.error("❌ AvaGraphBot no disponible")
+
+# ENDPOINTS
+
+@app.route('/')
+def index():
+    """Endpoint principal de información"""
+    return jsonify({
+        "service": "AgenteAVA Chat Webhook (AvaGraphBot)",
+        "version": "2.4",
+        "status": "running",
+        "port": 5001,
+        "ava_status": {
+            "module_loaded": AVA_MODULE is not None,
+            "class_available": AVA_CLASS is not None,
+            "class_name": AVA_CLASS.__name__ if AVA_CLASS else None,
+            "file_exists": (AVA_BOT_DIR / "ava_graph_bot.py").exists()
+        },
+        "bot_type": "AvaGraphBot",
+        "active_sessions": len(ava_instances),
+        "memory_preserved": True,
+        "timestamp": datetime.now().isoformat()
+    })
+
+@app.route('/health')
+def health():
+    """Estado de salud del servicio"""
+    try:
+        directories_ok = all([
+            AVA_SHARED_DIR.exists(),
+            GENERATED_IMAGES_DIR.exists(),
+            CHAT_UPLOADS_DIR.exists()
+        ])
+        
+        # Test de creación de instancia
+        test_instance_ok = False
+        if AVA_CLASS:
             try:
-                file_counts[dir_name] = len(list(dir_path.glob("*"))) if dir_path.exists() else 0
-            except:
-                file_counts[dir_name] = -1
+                test_instance = create_ava_instance("health_test")
+                if test_instance:
+                    test_instance_ok = True
+                    # Cleanup test instance
+                    try:
+                        test_instance.shutdown()
+                    except:
+                        pass
+            except Exception as e:
+                logger.warning(f"Test instance creation failed: {e}")
         
         return jsonify({
-            "service": "AgenteAVA Chat Service Enhanced",
-            "version": "2.0",
-            "status": "running",
+            "service": "AgenteAVA Chat Webhook (AvaGraphBot)",
+            "status": "healthy",
             "port": 5001,
-            "ava_available": ava_available,
-            "ava_error": ava_error,
-            "capabilities": [
-                "text_chat_with_ava",
-                "file_upload_analysis",
-                "image_generation",
-                "multimodal_processing",
-                "base64_image_processing",
-                "advanced_logging",
-                "conversation_history"
-            ],
-            "directories": directories_status,
-            "file_counts": file_counts,
-            "path_info": {
+            "ava_available": AVA_CLASS is not None,
+            "ava_class_name": AVA_CLASS.__name__ if AVA_CLASS else None,
+            "test_instance_creation": test_instance_ok,
+            "directories_ok": directories_ok,
+            "active_sessions": len(ava_instances),
+            "memory_preserved": True,
+            "system_info": {
                 "base_dir": str(BASE_DIR),
-                "ava_bot_in_path": str(BASE_DIR / "ava_bot") in sys.path
+                "ava_bot_dir": str(AVA_BOT_DIR),
+                "python_path_includes_ava": str(AVA_BOT_DIR) in sys.path
             },
-            "allowed_file_types": list(ALLOWED_EXTENSIONS),
-            "max_file_size_mb": MAX_FILE_SIZE // (1024 * 1024),
             "timestamp": datetime.now().isoformat()
         })
     except Exception as e:
-        logger.error(f"❌ Error en health check: {str(e)}")
         return jsonify({
-            "service": "AgenteAVA Chat Service Enhanced",
+            "service": "AgenteAVA Chat Webhook",
             "status": "error",
             "error": str(e),
             "timestamp": datetime.now().isoformat()
         }), 500
 
 @app.route('/api/chat/test')
-@cross_origin()
 def test_ava():
-    """Probar conexión con AgenteAVA"""
+    """Probar AvaGraphBot"""
     try:
-        logger.info("🧪 Iniciando prueba de conexión con AgenteAVA...")
-        ava_instance = create_fresh_ava_instance()
-        if ava_instance:
-            result = ava_instance.chat("Hola, ¿estás funcionando correctamente?")
-            processed = process_llm_response(result, "Prueba de funcionamiento")
-            return jsonify({
-                "success": True,
-                "ava_available": True,
-                "test_response": processed['response'][:200],
-                "response_length": len(processed['response']),
-                "processing_successful": processed['success'],
-                "timestamp": datetime.now().isoformat()
-            })
-        else:
+        if not AVA_CLASS:
             return jsonify({
                 "success": False,
-                "ava_available": False,
-                "error": "No se pudo crear instancia de AgenteAVA"
+                "message": "Clase AvaGraphBot no disponible",
+                "ava_module_loaded": AVA_MODULE is not None,
+                "timestamp": datetime.now().isoformat()
+            }), 503
+        
+        # Crear instancia temporal de prueba
+        test_session = f'test_{uuid.uuid4().hex[:8]}'
+        logger.info(f"🧪 Creando instancia de prueba: {test_session}")
+        
+        ava_instance = get_or_create_ava_instance(test_session)
+        
+        if not ava_instance:
+            return jsonify({
+                "success": False,
+                "message": "No se pudo crear instancia de prueba",
+                "timestamp": datetime.now().isoformat()
             }), 500
+        
+        # Ejecutar chat de prueba
+        try:
+            test_message = "Hola, confirma que estás funcionando correctamente"
+            logger.info(f"📨 Enviando mensaje de prueba: {test_message}")
+            
+            result = ava_instance.chat(test_message)
+            logger.info(f"📨 Resultado de prueba: {result}")
+            
+            processed = process_ava_response(result, test_message)
+            
+            # Obtener status de la instancia
+            try:
+                status = ava_instance.get_status()
+            except:
+                status = {"status_error": "No se pudo obtener status"}
+            
+            # Limpiar instancia temporal
+            try:
+                ava_instance.shutdown()
+            except:
+                pass
+            
+            if test_session in ava_instances:
+                del ava_instances[test_session]
+            
+            return jsonify({
+                "success": processed.get('success', False),
+                "message": "Prueba de AvaGraphBot completada",
+                "test_response_preview": processed.get('response', '')[:200] + "..." if len(processed.get('response', '')) > 200 else processed.get('response', ''),
+                "test_successful": processed.get('success', False),
+                "instance_status": status,
+                "raw_result": result,
+                "timestamp": datetime.now().isoformat()
+            })
+            
+        except Exception as chat_error:
+            logger.error(f"❌ Error en chat de prueba: {chat_error}")
+            return jsonify({
+                "success": False,
+                "message": f"Error ejecutando chat de prueba: {str(chat_error)}",
+                "timestamp": datetime.now().isoformat()
+            }), 500
+            
     except Exception as e:
         logger.error(f"❌ Error en test: {e}")
         return jsonify({
             "success": False,
-            "ava_available": False,
-            "error": str(e)
+            "message": f"Error en test: {str(e)}",
+            "timestamp": datetime.now().isoformat()
         }), 500
 
-@app.route('/api/chat/debug', methods=['POST'])
-@cross_origin()
-def debug_ava():
-    """Debug del LLM con mensaje personalizado"""
-    try:
-        data = request.get_json()
-        if not data:
-            return jsonify({'error': 'JSON data required'}), 400
-        
-        test_message = data.get('message', 'Mensaje de prueba para debug')
-        include_raw = data.get('include_raw', False)
-        
-        logger.info(f"🐛 Iniciando debug AVA con mensaje: '{test_message}'")
-        debug_start_time = datetime.now().timestamp();
-        
-        # Crear instancia
-        ava_instance = create_fresh_ava_instance()
-        if not ava_instance:
-            return jsonify({
-                'error': 'No se pudo crear instancia AVA para debug',
-                'timestamp': datetime.now().isoformat()
-            }), 503
-        
-        # Procesar mensaje
-        try:
-            result = ava_instance.chat(test_message)
-            processed = process_llm_response(result, test_message)
-            
-            debug_duration = datetime.now().timestamp() - debug_start_time;
-            
-            debug_response = {
-                'debug_info': {
-                    'input_message': test_message,
-                    'processing_successful': processed['success'],
-                    'response_preview': processed['response'][:200],
-                    'response_length': len(processed['response']),
-                    'processing_time_seconds': round(debug_duration, 3),
-                    'raw_result_type': type(result).__name__,
-                    'metadata': processed.get('metadata', {}),
-                    'timestamp': datetime.now().isoformat()
-                },
-                'full_response': processed['response'] if processed['success'] else None
-            }
-            
-            # Incluir resultado crudo si se solicita
-            if include_raw:
-                debug_response['raw_result'] = {
-                    'data': str(result)[:1000],  # Limitar tamaño
-                    'type': str(type(result)),
-                    'length': len(str(result))
-                }
-            
-            logger.info(f"✅ Debug completado en {debug_duration:.3f} segundos")
-            return jsonify(debug_response)
-            
-        except Exception as debug_error:
-            logger.error(f"❌ Error en debug AVA: {str(debug_error)}")
-            return jsonify({
-                'error': f'Error procesando mensaje de debug: {str(debug_error)}',
-                'debug_info': {
-                    'input_message': test_message,
-                    'error_type': type(debug_error).__name__,
-                    'timestamp': datetime.now().isoformat()
-                }
-            }), 500
-            
-    except Exception as e:
-        logger.error(f"❌ Error crítico en debug: {str(e)}")
-        return jsonify({'error': str(e)}), 500
 
-@app.route('/api/chat/history/<session_id>')
-@cross_origin()
-def get_chat_history(session_id):
-    """Obtener historial de chat mejorado"""
+
+# SERVIR ARCHIVOS
+@app.route('/images/<filename>')
+def serve_generated_image(filename):
+    """Servir imágenes generadas por AvaGraphBot"""
     try:
-        today = datetime.now().strftime('%Y%m%d')
-        log_file = CHAT_LOGS_DIR / f"chat_{today}.json"
+        return send_from_directory(GENERATED_IMAGES_DIR, filename)
+    except FileNotFoundError:
+        return jsonify({"error": "Imagen no encontrada"}), 404
+
+@app.route('/uploads/<filename>')
+def serve_uploaded_file(filename):
+    """Servir archivos subidos"""
+    try:
+        return send_from_directory(CHAT_UPLOADS_DIR, filename)
+    except FileNotFoundError:
+        return jsonify({"error": "Archivo no encontrado"}), 404
+
+@app.route('/user-images/<filename>')
+def serve_user_image(filename):
+    """Servir imágenes de usuario"""
+    try:
+        return send_from_directory(USER_IMAGES_DIR, filename)
+    except FileNotFoundError:
+        return jsonify({"error": "Imagen no encontrada"}), 404
+
+@app.route('/user-uploads/<filename>')
+def serve_user_upload(filename):
+    """Servir imágenes públicas de user-uploads"""
+    try:
+        public_uploads_dir = AVA_SHARED_DIR  # Debe ser ava_bot/shared_files
+        return send_from_directory(public_uploads_dir, filename)
+    except FileNotFoundError:
+        return jsonify({"error": "Imagen no encontrada"}), 404
+
+# ENDPOINT DE STATUS DE INSTANCIAS
+@app.route('/api/chat/sessions')
+def get_active_sessions():
+    """Obtener información de sesiones activas"""
+    try:
+        sessions_info = {}
         
-        if not log_file.exists():
-            return jsonify({"history": [], "session_id": session_id, "date": today})
-        
-        with open(log_file, 'r', encoding='utf-8') as f:
-            all_logs = json.load(f)
-        
-        session_logs = [log for log in all_logs if log.get('session_id') == session_id]
+        for session_id, instance in ava_instances.items():
+            try:
+                status = instance.get_status()
+                sessions_info[session_id] = {
+                    "session_id": session_id[:16] + "...",  # Ocultar ID completo
+                    "status": status,
+                    "active": True
+                }
+            except Exception as e:
+                sessions_info[session_id] = {
+                    "session_id": session_id[:16] + "...",
+                    "error": str(e),
+                    "active": False
+                }
         
         return jsonify({
-            "history": session_logs,
-            "session_id": session_id,
-            "date": today,
-            "total_messages": len(session_logs),
-            "has_files": any(log.get('file_info') for log in session_logs),
-            "has_images": any(log.get('image_info') for log in session_logs)
+            "total_sessions": len(ava_instances),
+            "sessions": sessions_info,
+            "timestamp": datetime.now().isoformat()
         })
         
     except Exception as e:
-        logger.error(f"❌ Error obteniendo historial: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
+# MANEJO DE ERRORES
+@app.errorhandler(404)
+def not_found(error):
+    logger.warning(f"❌ 404 - Endpoint no encontrado: {request.url}")
+    return jsonify({
+        "error": "Endpoint no encontrado",
+        "requested_url": request.url,
+        "method": request.method
+    }), 404
+
+@app.errorhandler(500)
+def internal_error(error):
+    logger.error(f"❌ Error 500: {error}")
+    return jsonify({
+        "error": "Error interno del servidor",
+        "timestamp": datetime.now().isoformat()
+    }), 500
+
 if __name__ == '__main__':
-    logger.info("🚀 WEBHOOK DE CHAT AVANZADO CON AGENTEAVA - Puerto 5001")
-    logger.info("📡 Endpoints disponibles:")
-    logger.info("   POST /api/chat - Chat con AgenteAVA (texto, archivos, imágenes base64)")
-    logger.info("   GET  /images/<filename> - Imágenes generadas por AVA")
-    logger.info("   GET  /uploads/<filename> - Archivos subidos")
-    logger.info("   GET  /user-images/<filename> - Imágenes de usuario procesadas")
-    logger.info("   GET  /api/chat/test - Probar conexión con AVA")
-    logger.info("   GET  /api/chat/status - Estado del LLM")
-    logger.info("   POST /api/chat/debug - Debug del LLM")
-    logger.info("   GET  /health - Estado completo del servicio")
-    logger.info("   GET  /api/chat/history/<session> - Historial de conversación")
-    logger.info(f"\n🤖 AgenteAVA disponible: {(BASE_DIR / 'ava_bot' / 'ava_graph_bot.py').exists()}")
-    logger.info(f"📁 PATH incluye ava_bot: {str(BASE_DIR / 'ava_bot') in sys.path}")
-    logger.info(f"📏 Tamaño máximo de archivo: {MAX_FILE_SIZE // (1024*1024)}MB")
-    logger.info(f"📋 Tipos de archivo permitidos: {', '.join(ALLOWED_EXTENSIONS)}")
-    logger.info("=" * 60)
+    print("=" * 80)
+    print("🚀 INICIANDO WEBHOOK CHAT AGENTEAVA (AVAGRAPHBOT)")
+    print("=" * 80)
     
-    app.run(host='0.0.0.0', port=5001, debug=True)
+    # Crear directorios
+    create_directories()
+    
+    # Información del sistema
+    print(f"\n📊 ESTADO DEL SISTEMA:")
+    print(f"  📁 Directorio base: {BASE_DIR}")
+    print(f"  📁 Directorio AVA: {AVA_BOT_DIR}")
+    print(f"  🤖 Módulo AVA: {'✅' if AVA_MODULE else '❌'}")
+    print(f"  🎯 Clase AVA: {'✅' if AVA_CLASS else '❌'}")
+    if AVA_CLASS:
+        print(f"  📋 Clase: {AVA_CLASS.__name__}")
+    print(f"  🧠 Memoria persistente: ✅ ACTIVADA")
+    print(f"  📡 Puerto: 5001")
+    print(f"  🤖 Bot: AvaGraphBot")
+    
+    # Test de creación de instancia
+    if AVA_CLASS:
+        print(f"\n🧪 PROBANDO CREACIÓN DE INSTANCIA...")
+        try:
+            test_instance = create_ava_instance("startup_test")
+            if test_instance:
+                print("✅ INSTANCIA AVAGRAPHBOT CREADA EXITOSAMENTE")
+                try:
+                    status = test_instance.get_status()
+                    print(f"📊 Status: {status}")
+                    test_instance.shutdown()
+                except Exception as e:
+                    print(f"⚠️ Warning obteniendo status: {e}")
+            else:
+                print("❌ NO SE PUDO CREAR INSTANCIA AVAGRAPHBOT")
+        except Exception as e:
+            print(f"❌ ERROR EN TEST: {e}")
+    
+    print(f"\n📡 ENDPOINTS DISPONIBLES:")
+    print("  GET  /                     - Información del servicio")
+    print("  GET  /health               - Estado de salud")
+    print("  POST /api/chat             - Chat con AvaGraphBot")
+    print("  GET  /api/chat/test        - Prueba de AvaGraphBot")
+    print("  GET  /api/chat/sessions    - Sesiones activas")
+    print("  GET  /images/<filename>    - Imágenes generadas")
+    
+    print(f"\n🧪 PRUEBAS RÁPIDAS:")
+    print("  curl http://localhost:5001/health")
+    print("  curl http://localhost:5001/api/chat/test")
+    
+    print(f"\n⚡ CARACTERÍSTICAS AVAGRAPHBOT:")
+    print("  ✅ Instancias persistentes por sesión")
+    print("  ✅ Servidor gRPC interno con herramientas")
+    print("  ✅ Cliente MCP para tools avanzados")
+    print("  ✅ Grafo de estado conversacional")
+    print("  ✅ Detección de imágenes generadas")
+    
+    print("\n" + "=" * 80)
+    
+    if not AVA_MODULE or not AVA_CLASS:
+        print("⚠️  ATENCIÓN: AvaGraphBot no completamente disponible")
+        print("   Verifica dependencias: grpc, langchain, mcp_server, etc.")
+    else:
+        print("🎉 AVAGRAPHBOT COMPLETAMENTE OPERATIVO")
+        print("   Memoria persistente activada")
+        print("   Listo para conversaciones inteligentes avanzadas")
+    
+    print(f"\n🎯 Presiona Ctrl+C para detener el servidor")
+    print("=" * 80)
+    
+    try:
+        app.run(
+            host='0.0.0.0',
+            port=5001,
+            debug=False,
+            threaded=True,
+            use_reloader=False
+        )
+    except KeyboardInterrupt:
+        print(f"\n👋 Servidor detenido por el usuario")
+        print(f"📊 Sesiones activas al cierre: {len(ava_instances)}")
+        
+        # Cleanup instancias
+        for session_id, instance in ava_instances.items():
+            try:
+                instance.shutdown()
+                print(f"🧹 Sesión {session_id[:8]}... cerrada")
+            except:
+                pass
+                
+    except Exception as e:
+        logger.error(f"Error crítico iniciando servidor: {e}")
+        print(f"\n❌ ERROR CRÍTICO: {e}")
+        raise

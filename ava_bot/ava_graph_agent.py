@@ -10,6 +10,8 @@ from dotenv import load_dotenv
 from ava_graph_state import AgentState
 from role_promt import get_role_prompt
 
+from base_context_agent import BaseContextAgent
+
 load_dotenv()
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
@@ -21,8 +23,7 @@ except ImportError:
     def get_role_prompt():
         return "Responde como Ava, consultora especializada en IA y agentes virtuales."
 
-class ConversationalNode:
-    """💬 CONVERSATIONAL AGENT - Ava, consultora especializada"""
+class ConversationalNode(BaseContextAgent):  # ✅ HEREDAR DE BaseContextAgent
     
     def __init__(self):
         """Inicializar ConversationalNode"""
@@ -148,59 +149,91 @@ class ConversationalNode:
             return fallback_state
 
     def generate_conversational_prompt(self, state: AgentState) -> str:
-        """🎯 PROMPT ULTRA-ESPECÍFICO PARA FORZAR USO COMPLETO DE DATOS"""
-        role_promt= get_role_prompt()
-        # ✅ EXTRAER DATOS DEL STATE
-        messages = state.get("messages", [])
-        tool_result = state.get("tool_result", "")
-        execution_plan = state.get("execution_plan", {})
+        """🎯 PROMPT CON CONTEXTO COMPLETO ESTANDARIZADO"""
+        role_promt = get_role_prompt()
         
-        # 🔍 ANÁLISIS ULTRA-ESPECÍFICO DEL TOOL_RESULT
-        specific_data = self._force_extract_all_specific_data(tool_result)
+        # ✅ USAR MÉTODO ESTANDARIZADO
+        context = self.get_complete_context(state)
+        
+        # ✅ FORMATEAR CONTEXTO COMPLETO
+        conversation_context = self.format_full_conversation_context(context['conversation_history'])
+        
+        # ✅ EXTRAER DATOS ESPECÍFICOS DE TODAS LAS FUENTES
+        extracted_data = self.extract_all_specific_data(context)
+        formatted_data = self.format_extracted_data(extracted_data)
+        
+        # ✅ ANALIZAR TOOL_RESULT ACTUAL
+        current_tool_data = self._force_extract_all_specific_data(context['tool_result'])
         
         # ✅ CONSULTA ACTUAL
-        user_messages = [msg for msg in messages if isinstance(msg, HumanMessage)]
+        user_messages = [msg for msg in context['messages'] if isinstance(msg, HumanMessage)]
         current_query = user_messages[-1].content if user_messages else "consulta general"
         
-        prompt = f"""ERES AVA - ASISTENTE QUE DEBE USAR **TODOS** LOS DATOS ESPECÍFICOS ENCONTRADOS.
+        prompt = f"""ERES AVA - DEBES USAR TODO EL CONTEXTO DISPONIBLE OBLIGATORIAMENTE.
 
-🎯 **CONSULTA:** "{current_query}"
+🎯 **CONSULTA ACTUAL:** "{current_query}"
 
-usa  esta infromacion que va determinar tu manera de relacionarte {role_promt}
+usa esta información que va determinar tu manera de relacionarte: {role_promt}
 
-🚨 **DATOS ESPECÍFICOS EXTRAÍDOS - USAR OBLIGATORIAMENTE:**
-{specific_data}
+{conversation_context}
+
+{formatted_data}
+
+🚨 **DATOS DEL RESULTADO ACTUAL:**
+{current_tool_data}
+
+🧠 **ESTADO DE LA SESIÓN:**
+- Sesión ID: {context['session_id']}
+- Mensajes en historial: {len(context['conversation_history'])}
+- Memoria contextual: {len(context['context_memory']) if isinstance(context['context_memory'], list) else 'Dict'}
+- Herramientas disponibles: {len(context['available_tools'])}
 
 📋 **INSTRUCCIONES ABSOLUTAS:**
 
-1. **PRIORIDAD 1:** Usa TODOS los precios exactos encontrados en los datos
-2. **PRIORIDAD 2:** Menciona TODOS los modelos/productos específicos encontrados  
-3. **PRIORIDAD 3:** Incluye TODOS los enlaces reales extraídos
-4. **PRIORIDAD 4:** Cita números exactos (cantidad de productos, precios, etc.)
+1. **PRIORIDAD MÁXIMA:** Si hay {len(context['conversation_history'])} mensajes en el historial, úsalos OBLIGATORIAMENTE
+2. **COHERENCIA:** Mantén continuidad con conversaciones previas mostradas arriba
+3. **DATOS ESPECÍFICOS:** Usa TODOS los datos extraídos (URLs, precios, fechas, hoteles, etc.)
+4. **REFERENCIAS:** Menciona información específica de conversaciones anteriores
+5. **SEGUIMIENTO:** Si la consulta actual es seguimiento, elabora sobre información previa
 
 ⚠️ **PROHIBIDO TOTALMENTE:**
-- Decir "no se encontraron características específicas" cuando HAY datos
-- Enfocarse solo en financiamiento si hay datos de productos
-- Generalizar cuando hay números exactos
-- Omitir precios específicos encontrados
+- Decir "no hemos hablado" cuando hay {len(context['conversation_history'])} mensajes en historial
+- Actuar como primera conversación cuando hay historial previo
+- Ignorar datos específicos extraídos del contexto
+- Generar información nueva cuando hay datos reales disponibles
+- Omitir referencias a conversaciones anteriores cuando existen
 
-✅ **FORMATO OBLIGATORIO:**
+✅ **FORMATO DE RESPUESTA:**
+- Reconoce conversaciones previas si las hay
+- Usa datos específicos del contexto (precios, fechas, URLs, etc.)
+- Mantén coherencia con el historial de la sesión
+- Responde de manera natural pero informada
 
-### 🚗 **Carros Específicos Encontrados**
-[LISTAR TODOS los modelos y precios específicos de los datos]
-
-### 💰 **Precios Exactos del Mercado**
-[TODOS los precios específicos encontrados]
-
-### 🔗 **Sitios Web Verificados**
-[TODOS los enlaces reales extraídos]
-
-### 📊 **Estadísticas del Mercado**
-[Números exactos: cantidad de carros, rangos, etc.]
-
-🎯 **RESPUESTA BASADA 100% EN DATOS EXTRAÍDOS:**"""
+🎯 **RESPUESTA BASADA EN TODO EL CONTEXTO DISPONIBLE:**"""
 
         return prompt
+
+    def _format_conversation_history(self, conversation_history: list) -> str:
+        """NUEVA FUNCIÓN: Formatear conversation_history para incluir en el prompt"""
+        if not conversation_history:
+            return "📝 **ESTADO:** Primera conversación\n"
+        
+        history_text = "📚 **HISTORIAL DE CONVERSACIÓN COMPLETO - USAR OBLIGATORIAMENTE:**\n"
+        history_text += "=" * 60 + "\n"
+        
+        # Incluir los últimos 6 mensajes para contexto suficiente
+        for i, msg in enumerate(conversation_history[-6:]):
+            if hasattr(msg, 'content') and msg.content:
+                role = "👤 USUARIO" if isinstance(msg, HumanMessage) else "🤖 AVA"
+                content = msg.content[:800]  # Suficiente contexto
+                history_text += f"{role}: {content}\n"
+                history_text += "-" * 50 + "\n"
+        
+        history_text += "=" * 60 + "\n"
+        history_text += "🚨 **CRÍTICO:** Este historial muestra nuestra conversación previa. DEBES referenciarla.\n"
+        history_text += "❌ **PROHIBIDO:** Decir que 'no hemos hablado' o 'acabamos de empezar' cuando hay historial.\n\n"
+        
+        return history_text
 
     def _force_extract_all_specific_data(self, tool_result: str) -> str:
         """Extracción forzada y agresiva de TODOS los datos específicos"""
@@ -220,20 +253,35 @@ usa  esta infromacion que va determinar tu manera de relacionarte {role_promt}
         if car_prices:
             extracted += f"💰 **PRECIOS EXACTOS:** {', '.join(set(car_prices))}\n"
         
+        # 🏨 EXTRAER HOTELES ESPECÍFICOS  
+        hotels = re.findall(r'(Hotel\s+\w+(?:\s+\w+)*|Casa\s+de\s+Alba|GHL\s+San\s+Lazaro)', tool_result, re.IGNORECASE)
+        if hotels:
+            extracted += f"🏨 **HOTELES ESPECÍFICOS:** {', '.join(set(hotels))}\n"
+        
+        # 🎯 EXTRAER ACTIVIDADES Y LUGARES
+        activities = re.findall(r'(Ciudad Amurallada|Castillo San Felipe|Torre del Reloj|Plaza de la Aduana|Bocagrande|Getsemaní)', tool_result, re.IGNORECASE)
+        if activities:
+            extracted += f"🎯 **ACTIVIDADES/LUGARES:** {', '.join(set(activities))}\n"
+        
         # 📊 EXTRAER CANTIDADES ESPECÍFICAS
-        quantities = re.findall(r'(\d+)\s+(?:carros?|vehículos?|encontrados?|resultados?)', tool_result, re.IGNORECASE)
+        quantities = re.findall(r'(\d+)\s+(?:carros?|vehículos?|encontrados?|resultados?|personas?)', tool_result, re.IGNORECASE)
         if quantities:
-            extracted += f"📊 **CANTIDADES:** {', '.join(quantities)} carros encontrados\n"
+            extracted += f"📊 **CANTIDADES:** {', '.join(quantities)} encontrados\n"
         
         # 🔗 EXTRAER URLs REALES
         urls = re.findall(r'https?://[^\s\'"]+', tool_result)
         if urls:
-            extracted += f"🔗 **ENLACES REALES:** {chr(10).join(urls)}\n"
+            extracted += f"🔗 **ENLACES REALES:** {chr(10).join(urls[:5])}\n"  # Primeros 5 links
         
         # 🏢 EXTRAER NOMBRES DE SITIOS/TIENDAS
-        sites = re.findall(r'(tucarro|mercadolibre|olx|autotrader|bancolombia)\.com?(?:\.co)?', tool_result, re.IGNORECASE)
+        sites = re.findall(r'(tucarro|mercadolibre|olx|autotrader|bancolombia|tripadvisor|booking|airbnb)\.com?(?:\.co)?', tool_result, re.IGNORECASE)
         if sites:
             extracted += f"🏢 **SITIOS VERIFICADOS:** {', '.join(set(sites))}\n"
+        
+        # 📅 EXTRAER FECHAS
+        dates = re.findall(r'(\d{1,2}\s+de\s+\w+|\d{1,2}/\d{1,2}/\d{4}|17\s+de\s+julio)', tool_result, re.IGNORECASE)
+        if dates:
+            extracted += f"📅 **FECHAS MENCIONADAS:** {', '.join(set(dates))}\n"
         
         # 📝 EXTRAER TÍTULOS ESPECÍFICOS
         titles = re.findall(r'"title":\s*"([^"]+)"', tool_result)

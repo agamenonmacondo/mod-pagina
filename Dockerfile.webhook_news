@@ -1,0 +1,36 @@
+# Dockerfile para webhook_news (Backend News)
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Instalar dependencias del sistema
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copiar requirements
+COPY webhook_news_requirements.txt requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copiar archivos principales
+COPY webhook_news.py .
+COPY ava_bot_news/ ./ava_bot_news/
+COPY ava_bot/ ./ava_bot/
+
+# Crear directorios necesarios
+RUN mkdir -p ava_bot_news/generated_news
+RUN mkdir -p ava_bot/generated_images
+
+# Exponer puerto
+EXPOSE 5000
+
+# Variables de entorno
+ENV FLASK_APP=webhook_news.py
+ENV FLASK_ENV=production
+ENV QDRANT_HOST=vector-db
+ENV QDRANT_PORT=6333
+
+# Comando para iniciar
+CMD ["python", "webhook_news.py"]

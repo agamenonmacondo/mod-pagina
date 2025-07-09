@@ -8,6 +8,8 @@ from ava_graph_state import AgentState
 import os
 import uuid
 import time
+import hashlib
+import traceback
 
 # ✅ QDRANT CON CONFIGURACIÓN ROBUSTA
 from qdrant_client import QdrantClient
@@ -24,12 +26,22 @@ class MultiModalMemory:
         self.collection_name = "ava_memory"
         self.embeddings = SentenceTransformer('all-MiniLM-L6-v2')
         
-        # ✅ INTENTAR MÚLTIPLES CONFIGURACIONES
-        qdrant_configs = [
+        # ✅ INTENTAR MÚLTIPLES CONFIGURACIONES (Docker + Local)
+        qdrant_configs = []
+        
+        # Si estamos en Docker, priorizar la configuración de Docker
+        if os.environ.get('QDRANT_HOST'):
+            qdrant_configs.extend([
+                {"host": os.environ.get('QDRANT_HOST'), "port": int(os.environ.get('QDRANT_PORT', 6333)), "timeout": 60},
+                {"url": os.environ.get('QDRANT_URL', f"http://{os.environ.get('QDRANT_HOST')}:6333"), "timeout": 60},
+            ])
+        
+        # Configuraciones locales como fallback
+        qdrant_configs.extend([
             {"host": "localhost", "port": 6333, "timeout": 60},
             {"host": "127.0.0.1", "port": 6333, "timeout": 60},
             {"url": "http://localhost:6333", "timeout": 60},
-        ]
+        ])
         
         self.client = None
         connection_error = None

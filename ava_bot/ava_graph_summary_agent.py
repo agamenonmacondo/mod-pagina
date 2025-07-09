@@ -7,6 +7,7 @@ from langchain_core.messages import HumanMessage, AIMessage
 from ava_graph_state import AgentState
 from ava_graph_multimodal import MultiModalMemory, ShortMemoryContextWithQdrant
 import os
+from supabase import create_client
 
 class SummaryAgent:
     """Agente especializado en crear resúmenes y guardar en DB"""
@@ -117,6 +118,39 @@ RESPONDE SOLO CON ESTE JSON (sin texto adicional):
             print(f"❌ Error generando JSON summary: {e}")
             return None
 
+    def _init_supabase(self):
+        """Inicializar cliente Supabase"""
+        url = os.getenv('SUPABASE_URL')
+        key = os.getenv('SUPABASE_SERVICE_KEY')
+        if not url or not key:
+            print("❌ SUPABASE_URL o SUPABASE_SERVICE_KEY no configurados")
+            self.supabase = None
+        else:
+            self.supabase = create_client(url, key)
+            print("✅ Cliente Supabase inicializado")
+
+    def save_conversation_to_supabase(self, state: AgentState, summary_data: Dict):
+        """Guardar resumen en Supabase"""
+        if not hasattr(self, 'supabase'):
+            self._init_supabase()
+        if not self.supabase:
+            print("❌ Supabase no inicializado, no se guarda en la nube")
+            return
+
+        try:
+            session_id = state.get("session_id", "unknown")
+            data = {
+                "session_id": session_id,
+                "timestamp": datetime.now().isoformat(),
+                "summary_type": "conversation_summary",
+                "structured_data": summary_data,
+                "llm_summary": summary_data.get("conversation_context", ""),
+            }
+            response = self.supabase.table('summaries').insert(data).execute()
+            print("✅ Resumen guardado en Supabase:", response)
+        except Exception as e:
+            print(f"❌ Error guardando en Supabase: {e}")
+
     def save_conversation_to_db(self, state: AgentState, summary_data: Dict):
         """Guardar conversación resumida en base de datos"""
         try:
@@ -159,6 +193,9 @@ RESPONDE SOLO CON ESTE JSON (sin texto adicional):
             conn.commit()
             conn.close()
             print(f"✅ Conversación guardada en DB: {session_id}")
+            
+            # Al final, después de guardar en SQLite:
+            self.save_conversation_to_supabase(state, summary_data)
             
         except Exception as e:
             print(f"❌ Error guardando en DB: {e}")
@@ -541,28 +578,36 @@ def create_short_memory_context_node():
 def create_summary_node():
     """Nodo summary híbrido con nombre original - CORREGIDO"""
     hybrid_integration = HybridMemoryIntegration()
-    
+    summary_agent = SummaryAgent()  # <--- Instancia del agente
+
     def summary_node(state: AgentState) -> AgentState:
         print("📋 SUMMARY NODE - Guardando en memoria híbrida...")
-        
+
         try:
+            # Guardar en SQLite y Supabase
+            summary_data = summary_agent._generate_json_summary(state)
+            if summary_data:
+                summary_agent.save_conversation_to_db(state, summary_data)
+            else:
+                print("❌ No se pudo generar el resumen JSON para guardar")
+
+            # Guardar en memoria vectorial si aplica
             hybrid_integration.save_to_hybrid_memory(state)
-            
-            # ✅ ACTUALIZAR ESTADO CON CAMPOS VÁLIDOS
+
+            # Actualizar estado
             updated_state = state.copy()
             updated_state["node"] = "summary_completed"
             updated_state["timestamp"] = datetime.now()
-            
+
             print("✅ Summary híbrido completado")
             return updated_state
-            
+
         except Exception as e:
             print(f"⚠️ Error en summary: {e}")
-            # ✅ CONTINUAR AUNQUE FALLE EL GUARDADO
             updated_state = state.copy()
             updated_state["node"] = "summary_completed"
             updated_state["timestamp"] = datetime.now()
             return updated_state
-    
+
     return summary_node
 

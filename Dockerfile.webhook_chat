@@ -1,0 +1,41 @@
+# Dockerfile para webhook_chat (Backend Chat)
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Instalar dependencias del sistema
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    ffmpeg \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copiar requirements
+COPY webhook_chat_requirements.txt requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copiar archivos principales
+COPY webhook_chat.py .
+COPY ava_bot/ ./ava_bot/
+
+# Crear directorios necesarios
+RUN mkdir -p ava_bot/shared_files
+RUN mkdir -p ava_bot/generated_images
+RUN mkdir -p chat_uploads
+RUN mkdir -p chat_logs
+RUN mkdir -p user_images
+RUN mkdir -p uploads
+RUN mkdir -p processed_images
+
+# Exponer puerto
+EXPOSE 5001
+
+# Variables de entorno
+ENV FLASK_APP=webhook_chat.py
+ENV FLASK_ENV=production
+ENV QDRANT_HOST=vector-db
+ENV QDRANT_PORT=6333
+
+# Comando para iniciar
+CMD ["python", "webhook_chat.py"]

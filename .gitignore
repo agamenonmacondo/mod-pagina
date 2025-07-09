@@ -307,3 +307,41 @@ uploads/
 downloads/
 generated_images/
 
+# ================================
+# DOCKER Y CONTENEDORES
+# ================================
+docker-compose.override.yml
+.docker/
+*.tar
+
+# ================================
+# FIREBASE Y NEXT.JS ESPECÍFICO
+# ================================
+firebase_pagina/.next/
+firebase_pagina/out/
+firebase_pagina/.env.local
+firebase_pagina/.env.production
+
+# ================================
+# QDRANT Y MEMORIA VECTORIAL
+# ================================
+vector_db_data/
+qdrant_storage/
+.qdrant/
+
+# ================================
+# ARCHIVOS ESPECÍFICOS DE AVA BOT
+# ================================
+ava_bot/generated_images/
+ava_bot/shared_files/
+ava_bot_news/generated_news/
+chat_uploads/
+chat_logs/
+user_images/
+
+# ================================
+# WEBHOOKS Y LOGS
+# ================================
+webhook_chat.log
+webhook_news.log
+

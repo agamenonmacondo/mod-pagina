@@ -30,47 +30,61 @@ SCOPES = [
 
 def generate_token():
     try:
-        # 1. Calcula rutas absolutas
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        base_dir = os.path.dirname(os.path.dirname(script_dir))
-        token_path = os.path.join(base_dir, 'token.json')
-        client_secret_path = os.path.join(base_dir, 'client_secret.json')
+        # 🔧 CORREGIR: Las rutas deben apuntar a la carpeta ava_bot
+        script_dir = os.path.dirname(os.path.abspath(__file__))  # ava_bot/
+        token_path = os.path.join(script_dir, 'token.json')      # ava_bot/token.json
+        client_secret_path = os.path.join(script_dir, 'client_secret.json')  # ava_bot/client_secret.json
 
-        print(f"Intentando guardar token en: {token_path}")
+        print(f"📁 Directorio del script: {script_dir}")
+        print(f"🔑 Buscando client_secret en: {client_secret_path}")
+        print(f"💾 Guardando token en: {token_path}")
 
-        # 2. Verifica permisos de escritura
+        # 2. Verificar que client_secret.json existe
+        if not os.path.exists(client_secret_path):
+            print(f"❌ No se encontró client_secret.json en: {client_secret_path}")
+            return False
+
+        # 3. Verifica permisos de escritura
         try:
             with open(token_path, 'w') as test_file:
                 test_file.write("test")
             os.remove(token_path)
+            print("✅ Permisos de escritura verificados")
         except Exception as e:
-            print(f"Error de permisos: {str(e)}")
-            print("Ejecuta PowerShell como administrador o verifica los permisos de la carpeta")
-            sys.exit(1)
+            print(f"❌ Error de permisos: {str(e)}")
+            print("💡 Ejecuta PowerShell como administrador o verifica los permisos de la carpeta")
+            return False
 
-        # 3. Flujo de autenticación
+        # 4. Flujo de autenticación
+        print("🔄 Iniciando flujo de autenticación...")
         flow = InstalledAppFlow.from_client_secrets_file(
             client_secret_path,
             SCOPES
         )
         creds = flow.run_local_server(port=0)
         
-        # 4. Guardado robusto
+        # 5. Guardado robusto
         temp_path = token_path + '.tmp'
         with open(temp_path, 'w') as token_file:
             token_file.write(creds.to_json())
         os.replace(temp_path, token_path)
         
-        print(f"Token guardado exitosamente en: {token_path}")
+        print(f"✅ Token guardado exitosamente en: {token_path}")
+        print(f"📅 Token válido hasta: {creds.expiry}")
         return True
         
     except Exception as e:
-        print(f"Error crítico: {str(e)}")
+        print(f"❌ Error crítico: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return False
 
 if __name__ == '__main__':
+    print("🚀 Generador de Token de Google OAuth")
+    print("=" * 50)
+    
     if generate_token():
-        print("Proceso completado con éxito")
+        print("🎉 Proceso completado con éxito")
     else:
-        print("Hubo un error al generar el token")
+        print("💥 Hubo un error al generar el token")
         sys.exit(1)

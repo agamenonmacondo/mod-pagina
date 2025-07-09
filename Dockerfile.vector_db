@@ -1,0 +1,12 @@
+# Dockerfile para Qdrant (Memoria Vectorial)
+FROM qdrant/qdrant:latest
+
+# Exponer puerto
+EXPOSE 6333
+
+# Configuración por defecto
+ENV QDRANT__SERVICE__HTTP_PORT=6333
+ENV QDRANT__SERVICE__GRPC_PORT=6334
+
+# Comando por defecto (ya incluido en la imagen base)
+CMD ["./qdrant"]

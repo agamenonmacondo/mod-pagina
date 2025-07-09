@@ -1,0 +1,15 @@
+# Requirements para webhook_news
+flask==2.3.3
+flask-cors==4.0.0
+pillow==10.0.0
+requests==2.31.0
+python-dotenv==1.0.0
+pathlib
+# Dependencias para memoria vectorial
+qdrant-client==1.7.0
+sentence-transformers==2.2.2
+torch>=1.13.0
+numpy>=1.21.0
+# Dependencias para LangChain
+langchain-groq
+langchain-core
