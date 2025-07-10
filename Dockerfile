@@ -3,11 +3,11 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Copiar package.json desde firebase_pagina
+# Verificar que existe el directorio firebase_pagina
 COPY firebase_pagina/package*.json ./
 
 # Instalar dependencias
-RUN npm install
+RUN npm ci --only=production
 
 # Copiar el resto del código de firebase_pagina
 COPY firebase_pagina/ .
@@ -25,6 +25,14 @@ EXPOSE 3000
 ENV NODE_ENV=production
 ENV NEXT_PUBLIC_NEWS_API_URL=http://webhook-news:5000
 ENV NEXT_PUBLIC_CHAT_API_URL=http://webhook-chat:5001
+
+# Crear usuario no-root para seguridad
+RUN addgroup -g 1001 -S nodejs
+RUN adduser -S nextjs -u 1001
+
+# Cambiar propietario de archivos
+RUN chown -R nextjs:nodejs /app
+USER nextjs
 
 # Comando para iniciar
 CMD ["npm", "start"]

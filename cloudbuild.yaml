@@ -4,10 +4,10 @@ steps:
     args: 
       - 'build'
       - '-f'
-      - 'firebase_pagina/Dockerfile'  # Especifica la ruta al Dockerfile
+      - 'Dockerfile'  # Dockerfile está en la raíz
       - '-t' 
       - 'gcr.io/$PROJECT_ID/avacloud:$COMMIT_SHA'
-      - './firebase_pagina'  # Contexto de build
+      - '.'  # Contexto de build desde la raíz del proyecto
   
   # Hacer push de la imagen
   - name: 'gcr.io/cloud-builders/docker'
